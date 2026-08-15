@@ -90,8 +90,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                 />
                 <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-lg border border-[#E5E1EC] p-3 z-50 animate-in fade-in zoom-in-95">
                   <div className="px-3 py-2 border-b border-[#E5E1EC] mb-2">
-                    <p className="text-xs font-semibold text-[#4A2270]">{user.name}</p>
-                    <p className="text-[11px] text-[#6E6A75] truncate">{user.email}</p>
+                    {/* El correo es el único identificador del cuidador que
+                        pedimos; el nombre nunca se recoge. */}
+                    <p className="text-xs font-semibold text-[#4A2270] truncate">{user.email}</p>
+                    {user.caseCode && (
+                      <p className="text-[11px] text-[#6E6A75]">Caso {user.caseCode}</p>
+                    )}
                     <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-[#2E2A33] bg-[#E9DFF5]/40 px-2 py-1 rounded-lg">
                       <Sparkles className="w-3 h-3 text-[#6B3FA0]" />
                       <span>Perfil: {user.child.nickname || 'Hijo/a'} ({user.child.birthMonth} {user.child.birthYear})</span>

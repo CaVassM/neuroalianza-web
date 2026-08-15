@@ -65,9 +65,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             Evaluación del desarrollo
           </p>
           
+          {/* Sin nombre: el registro nunca pide el del cuidador. El saludo
+              caía a "María", del perfil de demostración, y le daba la
+              bienvenida a la familia con un nombre que no era el suyo. */}
           <h1 className="text-3xl sm:text-4xl lg:text-[44px] font-fraunces font-bold text-[#2E2A33] leading-[1.15] tracking-tight mb-4">
-            Hola, {user.name || 'María'}.<br />
-            Estamos aquí para acompañarte.
+            Estamos aquí<br />
+            para acompañarte.
           </h1>
           
           <p className="text-[#6E6A75] text-base lg:text-lg mb-8 max-w-md leading-relaxed">

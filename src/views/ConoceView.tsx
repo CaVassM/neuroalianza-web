@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
-import { DEFINITIONS, OFFICIAL_SOURCES } from '../constants/data';
-import { 
-  Check, 
-  X, 
-  Play, 
-  ChevronDown, 
-  FileText, 
-  ArrowRight, 
+import {
+  Check,
+  X,
+  Play,
+  FileText,
+  ArrowRight,
   Sparkles,
   Info,
   ShieldCheck,
@@ -23,13 +21,7 @@ interface ConoceViewProps {
 }
 
 export const ConoceView: React.FC<ConoceViewProps> = ({ onNavigateToEvaluaciones }) => {
-  // Accordion state for definitions
-  const [openAccordionId, setOpenAccordionId] = useState<string | null>('neurodesarrollo');
   const [showVideoModal, setShowVideoModal] = useState(false);
-
-  const toggleAccordion = (id: string) => {
-    setOpenAccordionId(openAccordionId === id ? null : id);
-  };
 
   const yesCards = [
     {
@@ -360,118 +352,6 @@ export const ConoceView: React.FC<ConoceViewProps> = ({ onNavigateToEvaluaciones
             Haz clic para abrir el resumen interactivo
           </span>
         </motion.div>
-      </motion.section>
-
-      {/* 6. Definiciones importantes (Animated Accordion) */}
-      <motion.section 
-        id="definiciones"
-        initial={{ opacity: 0, y: 30 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.5 }}
-        className="space-y-4"
-      >
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-5 h-5 text-[#4A2270]" />
-          <h2 className="text-xl sm:text-2xl font-bold text-[#2E2A33]">
-            Conceptos clave del sistema de salud
-          </h2>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-[#E5E1EC] divide-y divide-[#E5E1EC] overflow-hidden shadow-xs">
-          {DEFINITIONS.map((def) => {
-            const isOpen = openAccordionId === def.id;
-            return (
-              <div key={def.id} className="transition-colors">
-                <button
-                  type="button"
-                  onClick={() => toggleAccordion(def.id)}
-                  aria-expanded={isOpen}
-                  className="w-full px-5 py-4 flex items-center justify-between text-left hover:bg-[#FAF8FC] transition-colors focus:outline-none cursor-pointer"
-                >
-                  <div className="flex items-center gap-3 pr-2">
-                    <span className="text-sm sm:text-base font-bold text-[#4A2270]">
-                      {def.term}
-                    </span>
-                    <span className="text-xs text-[#6E6A75] hidden sm:inline font-normal">
-                      — {def.fullTitle}
-                    </span>
-                  </div>
-                  <ChevronDown
-                    className={`w-5 h-5 text-[#6E6A75] transition-transform duration-200 shrink-0 ${
-                      isOpen ? 'rotate-180 text-[#4A2270]' : ''
-                    }`}
-                  />
-                </button>
-
-                <AnimatePresence>
-                  {isOpen && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.25, ease: 'easeInOut' }}
-                      className="overflow-hidden bg-[#FAF8FC]/70"
-                    >
-                      <div className="px-5 pb-5 pt-1 text-xs sm:text-sm text-[#2E2A33] leading-relaxed">
-                        <p className="font-normal text-[#2E2A33]">
-                          {def.description}
-                        </p>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            );
-          })}
-        </div>
-      </motion.section>
-
-      {/* 7. Official Framework Sources */}
-      <motion.section 
-        initial={{ opacity: 0, y: 30 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.5 }}
-        className="space-y-4"
-      >
-        <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-[#2E2A33]">
-            Fuentes normativas verificadas
-          </h2>
-          <p className="text-xs sm:text-sm text-[#6E6A75] mt-1">
-            Basamos todas nuestras recomendaciones en marcos sanitarios e institucionales del Perú:
-          </p>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-[#E5E1EC] p-5 sm:p-6 space-y-4 shadow-xs">
-          {OFFICIAL_SOURCES.map((source, idx) => (
-            <div
-              key={idx}
-              className="flex items-start gap-3.5 pb-4 border-b border-[#E5E1EC] last:border-0 last:pb-0"
-            >
-              <div className="w-10 h-10 rounded-xl bg-[#E9DFF5] flex items-center justify-center shrink-0 mt-0.5">
-                <FileText className="w-5 h-5 text-[#4A2270]" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h4 className="text-sm font-bold text-[#2E2A33]">
-                    {source.title}
-                  </h4>
-                  <span className="text-[10px] font-semibold px-2 py-0.5 bg-[#E9DFF5] text-[#4A2270] rounded-full">
-                    {source.badge}
-                  </span>
-                </div>
-                <p className="text-xs font-semibold text-[#6B3FA0] mt-0.5">
-                  {source.institution}
-                </p>
-                <p className="text-xs text-[#6E6A75] mt-1 leading-relaxed">
-                  {source.description}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
       </motion.section>
 
       {/* 8. Call to Action Banner */}
