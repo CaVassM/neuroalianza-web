@@ -33,12 +33,18 @@ interface FamiliasViewProps {
   onNavigateToConoce?: () => void;
   onNavigate?: (screen: ScreenType) => void;
   onUpdateUser?: (updated: UserProfile) => void;
+  /**
+   * Pregunta que se envía sola al montar. La usa el recorrido de demostración
+   * para cerrar enseñando una respuesta real del asistente.
+   */
+  preguntaAutomatica?: string;
 }
 
 export const FamiliasView: React.FC<FamiliasViewProps> = ({
   user,
   onNavigate,
   onUpdateUser,
+  preguntaAutomatica,
 }) => {
   const childName = user.child.nickname || 'tu hijo/a';
   const faseActual = user.fase || 1;
@@ -134,12 +140,32 @@ export const FamiliasView: React.FC<FamiliasViewProps> = ({
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Scroll smoothly when new messages arrive
+  // ¿La familia está mirando el final de la conversación o se fue a leer algo
+  // más arriba? Si se fue, no se la devuelve al fondo por la fuerza.
+  const cercaDelFinal = useRef(true);
+
   useEffect(() => {
-    if (messages.length > 0) {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [messages, isLoading]);
+    const alDesplazar = () => {
+      const restante =
+        document.documentElement.scrollHeight - window.innerHeight - window.scrollY;
+      cercaDelFinal.current = restante < 220;
+    };
+    window.addEventListener('scroll', alDesplazar, { passive: true });
+    return () => window.removeEventListener('scroll', alDesplazar);
+  }, []);
+
+  // El scroll automático se dispara al aparecer un mensaje NUEVO, no en cada
+  // actualización del texto.
+  //
+  // Antes dependía de `messages` entero: durante el streaming el texto cambia
+  // decenas de veces por segundo, así que se encolaban decenas de scrolls
+  // suaves seguidos. El resultado era que la página quedaba clavada en el
+  // fondo y no se podía subir a leer mientras el modelo escribía.
+  const totalMensajes = messages.length;
+  useEffect(() => {
+    if (totalMensajes === 0 || !cercaDelFinal.current) return;
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [totalMensajes]);
 
   // Handle opening document details in lateral Drawer
   const handleOpenSource = (sourceTitle: string) => {
@@ -280,12 +306,19 @@ export const FamiliasView: React.FC<FamiliasViewProps> = ({
       condicionDetectada = localResult.condicionDetectada || '';
     }
 
-    // Smooth streaming effect
+    // Efecto de escritura progresiva.
+    //
+    // Ritmo fijo y trozo proporcional: el texto tarda ~1,2 s en aparecer sea
+    // cual sea su longitud, con unos 30 repintados. Antes el intervalo bajaba
+    // a 8 ms y una respuesta larga provocaba casi 200 renders del hilo de
+    // mensajes, que es lo que hacía ir a tirones a toda la página.
+    const PASOS = 30;
+    const INTERVALO_MS = 40;
     let currentIdx = 0;
-    const streamSpeed = Math.max(8, Math.min(20, Math.floor(1000 / (fullAnswer.length || 1))));
+    const trozo = Math.max(4, Math.ceil((fullAnswer.length || 1) / PASOS));
 
     const streamInterval = setInterval(() => {
-      currentIdx += 5;
+      currentIdx += trozo;
       if (currentIdx >= fullAnswer.length) {
         clearInterval(streamInterval);
         setMessages((prev) =>
@@ -321,8 +354,18 @@ export const FamiliasView: React.FC<FamiliasViewProps> = ({
           })
         );
       }
-    }, streamSpeed);
+    }, INTERVALO_MS);
   };
+
+  // Consulta lanzada por el recorrido de demostración. Se dispara una sola vez
+  // por pregunta y solo si el chat está desbloqueado.
+  const preguntaLanzada = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    if (!preguntaAutomatica || !chatHabilitado) return;
+    if (preguntaLanzada.current === preguntaAutomatica) return;
+    preguntaLanzada.current = preguntaAutomatica;
+    handleSend(preguntaAutomatica);
+  }, [preguntaAutomatica, chatHabilitado]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const hasMessages = messages.length > 0;
 

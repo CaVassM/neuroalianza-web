@@ -12,6 +12,13 @@ interface CuestionarioViewProps {
   user: UserProfile;
   onNavigate: (screen: ScreenType) => void;
   onUpdateUser?: (updated: UserProfile) => void;
+  /**
+   * Arranca directamente en la pantalla de resultado, sin el modal de
+   * bienvenida. Lo usa el recorrido de demostración para enseñar el semáforo
+   * sin teclear las 20 respuestas; las respuestas ya vienen sembradas en el
+   * perfil.
+   */
+  mostrarResultadoDirecto?: boolean;
 }
 
 type WizardState = 'question' | 'review' | 'result';
@@ -61,6 +68,7 @@ export const CuestionarioView: React.FC<CuestionarioViewProps> = ({
   user,
   onNavigate,
   onUpdateUser,
+  mostrarResultadoDirecto = false,
 }) => {
   const childName = user.child.nickname || 'Tu niño/a';
 
@@ -85,8 +93,10 @@ export const CuestionarioView: React.FC<CuestionarioViewProps> = ({
   });
 
   const [currentQIndex, setCurrentQIndex] = useState(0);
-  const [wizardState, setWizardState] = useState<WizardState>('question');
-  const [showIntroModal, setShowIntroModal] = useState(true);
+  const [wizardState, setWizardState] = useState<WizardState>(
+    mostrarResultadoDirecto ? 'result' : 'question'
+  );
+  const [showIntroModal, setShowIntroModal] = useState(!mostrarResultadoDirecto);
   const [isEditingFromReview, setIsEditingFromReview] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
 

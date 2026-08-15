@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ScreenType, UserProfile, ChildData, LocationData, InsuranceType, CasePhase } from './types';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
@@ -17,6 +17,9 @@ import { ProfesionalView } from './views/ProfesionalView';
 import { SeguimientoView } from './views/SeguimientoView';
 import { cargarPerfil, guardarPerfil } from './data/perfilLocal';
 import { crearPerfilNuevo, generarCodigoCaso, PERFIL_DEMO } from './data/perfiles';
+import { useRecorridoDemo } from './demo/useRecorridoDemo';
+import { PanelDemo } from './demo/PanelDemo';
+import { FlaskConical } from 'lucide-react';
 
 export default function App() {
   // El perfil se rehidrata de localStorage al arrancar. Sin esto, el celular
@@ -24,15 +27,27 @@ export default function App() {
   // WhatsApp volvía a pedirlo.
   const [user, setUser] = useState<UserProfile>(() => cargarPerfil() ?? PERFIL_DEMO);
 
-  // Cada cambio del perfil se persiste. Es lo que hace que el celular y el id
-  // de seguimiento sobrevivan a una recarga.
-  useEffect(() => {
-    guardarPerfil(user);
-  }, [user]);
-
   // Current view state
   const [currentScreen, setCurrentScreen] = useState<ScreenType>('dashboard');
   const [profesionalCode, setProfesionalCode] = useState<string>('NA-7K3M9');
+
+  // Último perfil REAL, el de antes de entrar al recorrido de demostración.
+  const perfilReal = useRef(user);
+
+  const demo = useRecorridoDemo({
+    irA: setCurrentScreen,
+    aplicarPerfil: setUser,
+    perfilOriginal: () => perfilReal.current,
+  });
+
+  // El recorrido escribe un caso sintético encima del real. Persistirlo
+  // sobrescribiría el perfil de quien esté usando la aplicación, y al salir ya
+  // no quedaría nada que restaurar.
+  useEffect(() => {
+    if (demo.activo) return;
+    perfilReal.current = user;
+    guardarPerfil(user);
+  }, [user, demo.activo]);
   const [seguimientoId, setSeguimientoId] = useState<string>('');
 
   // Detect URL routing for /caso/:codigo, /seguimiento/:id, sus variantes con
@@ -278,6 +293,7 @@ export default function App() {
         {currentScreen === 'familias' && (
           <FamiliasView
             user={user}
+            preguntaAutomatica={demo.pregunta}
             onUpdateUser={(updated) => setUser(updated)}
             onNavigate={(screen) => {
               setCurrentScreen(screen);
@@ -302,7 +318,11 @@ export default function App() {
 
         {currentScreen === 'cuestionario' && (
           <CuestionarioView
+            // key: al entrar o salir del recorrido hay que remontar la vista,
+            // porque su estado de asistente es interno y no reacciona al prop.
+            key={demo.activo ? 'demo' : 'real'}
             user={user}
+            mostrarResultadoDirecto={demo.activo}
             onUpdateUser={(updated) => setUser(updated)}
             onNavigate={(screen) => {
               setCurrentScreen(screen);
@@ -335,6 +355,31 @@ export default function App() {
           />
         )}
       </main>
+
+      <PanelDemo
+        activo={demo.activo}
+        enPausa={demo.enPausa}
+        indice={demo.indice}
+        paso={demo.paso}
+        onAlternarPausa={demo.alternarPausa}
+        onAnterior={demo.anterior}
+        onSiguiente={demo.siguiente}
+        onSalir={demo.salir}
+      />
+
+      {/* Interruptor del recorrido. Flotante y discreto: es una herramienta de
+          presentación, no una función del producto. */}
+      {!demo.activo && !isPlainLayout && (
+        <button
+          type="button"
+          onClick={demo.iniciar}
+          className="fixed bottom-4 right-4 z-[55] inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#2E1A47] hover:bg-[#4A2270] text-white text-xs font-bold shadow-lg border border-[#4A2270] transition-all cursor-pointer"
+          title="Recorre toda la ruta con una cuenta de ejemplo"
+        >
+          <FlaskConical className="w-4 h-4 text-[#A78BC7]" />
+          <span>Modo demostración</span>
+        </button>
+      )}
 
       {/* Persistent global footer on dashboard screens */}
       {!isPlainLayout && (
