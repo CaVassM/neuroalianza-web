@@ -13,6 +13,7 @@ import {
 } from '../components/Familias/ChatMessageItem';
 import { ChatComposer } from '../components/Familias/ChatComposer';
 import { DocumentDrawer } from '../components/Familias/DocumentDrawer';
+import { BibliotecaPreguntas } from '../components/Familias/BibliotecaPreguntas';
 import { consultar, type TurnoHistorial } from '../api/cliente';
 import { 
   Puzzle, 
@@ -546,7 +547,24 @@ export const FamiliasView: React.FC<FamiliasViewProps> = ({
         </div>
       )}
 
-      {/* 5. LATERAL DOCUMENT DRAWER (LIBRARY) */}
+      {/* 5. BIBLIOTECA DE PREGUNTAS
+          Va aquí y no en otra pestaña porque cada pregunta se responde en este
+          mismo chat: separarla obligaría a la familia a saltar de sitio para
+          obtener la respuesta. Solo se muestra con el asistente habilitado. */}
+      {hasDiagnosis && (
+        <div className="bg-white border border-[#E5E1EC] rounded-2xl p-5 sm:p-6 shadow-xs">
+          <BibliotecaPreguntas
+            fase={user.fase || 1}
+            ocupado={isLoading}
+            onPreguntar={(texto) => {
+              handleSend(texto);
+              messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+            }}
+          />
+        </div>
+      )}
+
+      {/* 6. LATERAL DOCUMENT DRAWER (LIBRARY) */}
       <DocumentDrawer
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
