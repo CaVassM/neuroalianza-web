@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { UserProfile, CasePhase, CaseLogItem } from '../../types';
 import { Check, ChevronDown, ChevronUp, Clock, FileText, Sparkles, AlertTriangle, ArrowRight, ShieldCheck, CheckCircle2, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { RegistroCitaModal, type ResultadoCita } from './RegistroCitaModal';
+import { FLUJOS } from '../../data/flujoCita';
 
 interface RastreadorFaseProps {
   user: UserProfile;
@@ -14,6 +16,39 @@ export const RastreadorFase: React.FC<RastreadorFaseProps> = ({ user, onUpdateUs
 
   const [expandedCompletedPhase, setExpandedCompletedPhase] = useState<number | null>(null);
   const [showConfirmAdvanceModal, setShowConfirmAdvanceModal] = useState(false);
+  const [showRegistroCita, setShowRegistroCita] = useState(false);
+
+  // La fase 3 es la de "ya fui a mi cita": ahí no basta confirmar, hay que
+  // registrar a qué servicio fue, cómo se sintió y qué le dijeron.
+  const esRegistroDeCita = currentPhase === 3;
+
+  const registrarCita = ({ servicio, sentimiento, indicacion }: ResultadoCita) => {
+    if (!onUpdateUser) return;
+
+    const fecha = new Date().toLocaleDateString('es-PE', { day: 'numeric', month: 'short' });
+    const flujo = FLUJOS[servicio];
+
+    const registro: CaseLogItem = {
+      fecha,
+      titulo: `Cita en ${flujo.nombre}: ${indicacion.etiqueta}`,
+      detalle: `La familia se sintió ${sentimiento.etiqueta.toLowerCase()}. ${indicacion.siguientePaso}`,
+      tipo: 'fase_update',
+      origen: 'familia',
+      faseNum: (indicacion.avanzaA || currentPhase) as CasePhase,
+    };
+
+    // Una derivación habilita ese servicio para el próximo registro de cita.
+    const derivaciones = indicacion.derivaA
+      ? Array.from(new Set([...(user.derivaciones || []), indicacion.derivaA]))
+      : user.derivaciones;
+
+    onUpdateUser({
+      ...user,
+      fase: Math.max(user.fase || 3, indicacion.avanzaA || currentPhase) as CasePhase,
+      derivaciones,
+      registros: [...(user.registros || []), registro],
+    });
+  };
 
   const phases = [
     {
@@ -413,7 +448,13 @@ export const RastreadorFase: React.FC<RastreadorFaseProps> = ({ user, onUpdateUs
           <div className="shrink-0 self-start sm:self-center">
             <button
               type="button"
-              onClick={() => setShowConfirmAdvanceModal(true)}
+              onClick={() =>
+                // "Ya fui a mi cita" abre el cuestionario de la cita; el resto
+                // de fases siguen con la confirmación simple.
+                esRegistroDeCita
+                  ? setShowRegistroCita(true)
+                  : setShowConfirmAdvanceModal(true)
+              }
               className="px-5 py-2.5 bg-[#4A2270] hover:bg-[#381559] text-white text-xs sm:text-sm font-bold rounded-xl transition-all shadow-xs cursor-pointer flex items-center gap-2"
             >
               <span>{activePhaseInfo.advanceBtnText}</span>
@@ -422,6 +463,14 @@ export const RastreadorFase: React.FC<RastreadorFaseProps> = ({ user, onUpdateUs
           </div>
         )}
       </div>
+
+      <RegistroCitaModal
+        abierto={showRegistroCita}
+        derivaciones={user.derivaciones}
+        childName={childName}
+        onCerrar={() => setShowRegistroCita(false)}
+        onConfirmar={registrarCita}
+      />
 
       {/* CONFIRMATION MODAL TO ADVANCE PHASE */}
       <AnimatePresence>

@@ -33,6 +33,14 @@ export interface LocationData {
 
 export type CasePhase = 1 | 2 | 3 | 4 | 5 | 6;
 
+/** Servicios de salud por los que puede pasar la ruta. Ver src/data/flujoCita.ts */
+export type ServicioCita =
+  | 'cred'
+  | 'pediatria'
+  | 'neuropediatria'
+  | 'psiquiatria'
+  | 'especialista';
+
 export interface ScreeningResult {
   score: number;
   nivel: 'bajo' | 'medio' | 'alto' | 'baja' | 'moderada' | 'alta';
@@ -89,6 +97,8 @@ export interface UserProfile {
   phone?: string;
   /** Id del seguimiento en el servidor. Es la credencial del enlace: no mostrar. */
   seguimientoId?: string;
+  /** Servicios a los que una cita derivó. Habilitan ese flujo al registrar la siguiente. */
+  derivaciones?: ServicioCita[];
   child: ChildData;
   location: LocationData;
   insurance: InsuranceType;
