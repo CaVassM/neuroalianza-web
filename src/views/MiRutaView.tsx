@@ -6,8 +6,9 @@ import { BotonSeguimientoWhatsApp } from '../components/BotonSeguimientoWhatsApp
 import { MONTHS, YEARS } from '../constants/data';
 import { generateAndDownloadScreeningPDF } from '../utils/pdfGenerator';
 import alternativasData from '../data/alternativas.json';
-import { 
-  Navigation, 
+import {
+  ClipboardList,
+  Navigation,
   FileCheck2, 
   ShieldCheck, 
   CheckCircle2,
@@ -53,8 +54,17 @@ export const MiRutaView: React.FC<MiRutaViewProps> = ({ user, onUpdateUser, onNa
   const [diagMes, setDiagMes] = useState('Enero');
   const [diagAno, setDiagAno] = useState('2025');
 
-  const district = user.location.district || 'Miraflores';
+  // Sin caer a Miraflores: si la familia no eligió distrito, hay que pedírselo,
+  // no enseñarle los establecimientos de otro sitio como si fueran los suyos.
+  // Para los textos se usa un genérico en vez de nombrar un distrito ajeno.
+  const distritoRegistrado = user.location.district;
+  const district = distritoRegistrado || 'tu distrito';
   const childName = user.child.nickname || 'tu hijo/a';
+  const faseActual = user.fase || 1;
+
+  // El tamizaje es lo que lleva de la fase 2 a la 3. Mientras no esté hecho,
+  // la ruta no puede sugerir dónde atenderse: no hay resultado que llevar.
+  const faltaTamizaje = !user.screeningResult && !user.diagnosis;
 
   // Check if user has a starting point (screening result, diagnosis, or phase >= 2)
   const hasStartingPoint = Boolean(
@@ -85,7 +95,7 @@ export const MiRutaView: React.FC<MiRutaViewProps> = ({ user, onUpdateUser, onNa
       await generateAndDownloadScreeningPDF({
         caseCode: user.caseCode || 'NA-7K3M9',
         childAgeMonths: 20,
-        district: user.location.district || 'Miraflores',
+        district: user.location.district || 'No registrado',
         insurance: user.insurance || 'SIS',
         score: user.screeningResult?.score ?? 5,
         nivel: user.screeningResult?.nivel ?? 'moderada',
@@ -437,6 +447,48 @@ export const MiRutaView: React.FC<MiRutaViewProps> = ({ user, onUpdateUser, onNa
         {/* 6-Phase Tracker */}
         <RastreadorFase user={user} onUpdateUser={onUpdateUser} />
       </div>
+
+      {/* Siguiente paso cuando la ruta aún no puede arrancar.
+          En fase 2 la familia ya tiene su caso pero no un resultado que llevar
+          a la consulta, así que mostrarle establecimientos sería adelantarse. */}
+      {faltaTamizaje && (
+        <div className="bg-[#FDF1DF] border border-[#FBE0B8] rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 rounded-xl bg-[#FBE0B8] flex items-center justify-center shrink-0">
+              <ClipboardList className="w-4.5 h-4.5 text-[#C77700]" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-[15px] font-bold text-[#C77700]">
+                Tu siguiente paso es el tamizaje
+              </h3>
+              <p className="text-[13px] text-[#9E5D00] leading-relaxed max-w-xl">
+                Son 20 preguntas y toma unos 5 minutos. Su resultado es lo que llevarás a
+                la consulta, y es lo que abre la <strong>fase 3</strong> para mostrarte
+                dónde acudir según tu distrito y tu seguro.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => onNavigate?.('evaluaciones')}
+            className="w-full sm:w-auto shrink-0 px-6 py-3 bg-[#4A2270] hover:bg-[#381559] text-white text-sm font-bold rounded-xl transition-all shadow-xs cursor-pointer flex items-center justify-center gap-2"
+          >
+            <span>Hacer el tamizaje</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Sin distrito no se puede armar la ruta de atención. */}
+      {!distritoRegistrado && (
+        <div className="bg-white border border-[#E5E1EC] rounded-2xl p-5 flex items-start gap-3">
+          <MapPin className="w-4.5 h-4.5 text-[#6E6A75] shrink-0 mt-0.5" />
+          <p className="text-[13px] text-[#6E6A75] leading-relaxed">
+            Aún no registraste tu distrito. Lo necesitamos para mostrarte los
+            establecimientos de salud más cercanos.
+          </p>
+        </div>
+      )}
 
       {/* 1. SECCIÓN DÓNDE ATENDERTE CON MAPA 65%, LISTADO LATERAL 35% Y FICHA DE SERVICIO */}
       <div id="seccion-donde-atenderte">

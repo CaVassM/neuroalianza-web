@@ -38,7 +38,10 @@ export const DondeAtenderteSection: React.FC<DondeAtenderteSectionProps> = ({
   activeBarrierFilter,
   onClearBarrierFilter,
 }) => {
-  const district = user.location.district || 'Miraflores';
+  // Sin distrito registrado el mapa necesita igualmente un centro desde el que
+  // partir; se usa Lima Cercado, y la interfaz avisa de que falta el dato en
+  // vez de presentar los establecimientos como si fueran los del barrio.
+  const district = user.location.district || 'Lima (Cercado)';
   const defaultDistrictCoords = getDistrictCoordinates(district);
 
   // User location state

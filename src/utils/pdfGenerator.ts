@@ -16,7 +16,7 @@ export interface ScreeningPDFOptions {
 export async function generateAndDownloadScreeningPDF(options: ScreeningPDFOptions = {}) {
   const caseCode = options.caseCode || 'NA-7K3M9';
   const childAgeMonths = options.childAgeMonths || 20;
-  const district = options.district || 'Miraflores';
+  const district = options.district || 'No registrado';
   const insurance = (options.insurance || 'SIS').toUpperCase();
   const score = options.score ?? 5;
   const rawNivel = options.nivel || (score <= 2 ? 'baja' : score <= 7 ? 'moderada' : 'alta');

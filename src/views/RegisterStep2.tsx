@@ -20,9 +20,12 @@ export const RegisterStep2: React.FC<RegisterStep2Props> = ({
   onBack,
   onGoToLogin,
 }) => {
+  // El distrito NO se preselecciona: es el dato que decide qué establecimientos
+  // se le muestran a la familia. Venía con Miraflores puesto, así que quien no
+  // tocaba el selector terminaba con una ruta de un distrito que no es el suyo.
   const [department, setDepartment] = useState(initialData.department || 'Lima');
   const [province, setProvince] = useState(initialData.province || 'Lima');
-  const [district, setDistrict] = useState(initialData.district || 'Miraflores');
+  const [district, setDistrict] = useState(initialData.district || '');
 
   const provincesByDepartment: Record<string, string[]> = {
     Lima: ['Lima', 'Cañete', 'Huaral', 'Barranca', 'Huaura', 'Canta', 'Yauyos', 'Huarochirí', 'Oyón'],
@@ -41,11 +44,8 @@ export const RegisterStep2: React.FC<RegisterStep2Props> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onNext({
-      department,
-      province,
-      district: district || 'Miraflores',
-    });
+    if (!district) return;
+    onNext({ department, province, district });
   };
 
   return (
@@ -114,7 +114,16 @@ export const RegisterStep2: React.FC<RegisterStep2Props> = ({
               <Navigation className="w-4 h-4 text-[#4A2270]" />
             </div>
             <p className="text-[13px] text-[#6E6A75] leading-relaxed">
-              Seleccionaste: <span className="font-semibold text-[#2E2A33]">{district || 'Miraflores'}, {province}, {department}</span>
+              {district ? (
+                <>
+                  Seleccionaste:{' '}
+                  <span className="font-semibold text-[#2E2A33]">
+                    {district}, {province}, {department}
+                  </span>
+                </>
+              ) : (
+                <>Elige tu distrito para continuar.</>
+              )}
             </p>
           </div>
 
@@ -130,7 +139,12 @@ export const RegisterStep2: React.FC<RegisterStep2Props> = ({
 
             <button
               type="submit"
-              className="px-8 py-3.5 bg-[#4A2270] hover:bg-[#381559] active:scale-[0.98] text-white text-[15px] font-bold rounded-xl transition-all duration-200 shadow-sm hover:shadow-md cursor-pointer"
+              disabled={!district}
+              className={`px-8 py-3.5 text-[15px] font-bold rounded-xl transition-all duration-200 shadow-sm ${
+                district
+                  ? 'bg-[#4A2270] hover:bg-[#381559] active:scale-[0.98] text-white hover:shadow-md cursor-pointer'
+                  : 'bg-gray-200 text-gray-400 cursor-not-allowed border border-gray-300'
+              }`}
             >
               Continuar
             </button>

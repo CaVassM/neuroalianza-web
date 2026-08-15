@@ -81,6 +81,34 @@ describe('flujo de una familia que se registra', () => {
     expect(nuevo.screeningResult).toBeNull();
   });
 
+  /**
+   * El distrito decide qué establecimientos ve la familia. Preseleccionarlo
+   * hacía que quien no tocara el selector acabara con la ruta de Miraflores.
+   */
+  it('no hay ningún dato geográfico ni clínico puesto por defecto', () => {
+    const nuevo = crearPerfilNuevo('sin@datos.pe', '987654321');
+
+    expect(nuevo.location.district).toBe('');
+    expect(nuevo.location.province).toBe('');
+    expect(nuevo.location.department).toBe('');
+    expect(nuevo.child.nickname).toBe('');
+    expect(nuevo.child.birthMonth).toBe('');
+    expect(nuevo.child.birthYear).toBe('');
+    expect(nuevo.derivaciones).toEqual([]);
+    expect(nuevo.seguimientoId).toBeUndefined();
+  });
+
+  it('en fase 2 la ruta debe sugerir el tamizaje', () => {
+    const u = completarRegistro(crearPerfilNuevo('a@b.pe', '987654321'));
+    // Es la condición que dispara el aviso en Mi Ruta.
+    const faltaTamizaje = !u.screeningResult && !u.diagnosis;
+    expect(u.fase).toBe(2);
+    expect(faltaTamizaje).toBe(true);
+
+    const conTamizaje = completarTamizaje(u, 5);
+    expect(!conTamizaje.screeningResult && !conTamizaje.diagnosis).toBe(false);
+  });
+
   it('cada caso nuevo recibe un código propio', () => {
     const codigos = new Set(Array.from({ length: 200 }, generarCodigoCaso));
     expect(codigos.size).toBeGreaterThan(190); // sin colisiones prácticas

@@ -248,7 +248,7 @@ export const CuestionarioView: React.FC<CuestionarioViewProps> = ({
       await generateAndDownloadScreeningPDF({
         caseCode: user.caseCode || 'NA-7K3M9',
         childAgeMonths: ageInMonths,
-        district: user.location.district || 'Miraflores',
+        district: user.location.district || 'No registrado',
         insurance: user.insurance || 'SIS',
         score,
         nivel: nivel as 'baja' | 'moderada' | 'alta',
