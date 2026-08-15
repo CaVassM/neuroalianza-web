@@ -12,7 +12,9 @@ interface RastreadorFaseProps {
 
 export const RastreadorFase: React.FC<RastreadorFaseProps> = ({ user, onUpdateUser }) => {
   const childName = user.child.nickname || 'tu hijo/a';
-  const currentPhase = (user.fase || (user.diagnosis ? 5 : user.screeningResult ? 4 : 3)) as CasePhase;
+  // El fallback termina en 1, no en 3: un caso sin fase es un caso que acaba
+  // de empezar, no uno que ya está buscando atención.
+  const currentPhase = (user.fase || (user.diagnosis ? 5 : user.screeningResult ? 3 : 1)) as CasePhase;
 
   const [expandedCompletedPhase, setExpandedCompletedPhase] = useState<number | null>(null);
   const [showConfirmAdvanceModal, setShowConfirmAdvanceModal] = useState(false);
@@ -131,7 +133,19 @@ export const RastreadorFase: React.FC<RastreadorFaseProps> = ({ user, onUpdateUs
 
     if (records.length > 0) return records;
 
-    // Fallbacks if no custom registros
+    // Los textos de abajo son de RELLENO, con fechas fijas de agosto. Sirven
+    // para que el perfil de demostración se vea poblado, pero a una familia
+    // recién registrada le mostraban un historial que nunca ocurrió
+    // ("Registraste las primeras observaciones — 10 ago" el mismo día del alta).
+    //
+    // Solo se usan en fases que el caso YA superó y cuando existe algún dato
+    // real que las respalde. Un caso nuevo no inventa pasado.
+    const faseSuperada = phaseNum < currentPhase;
+    const tieneHistoria = Boolean(
+      user.screeningResult || user.diagnosis || user.selectedEstablecimientoCodigo
+    );
+    if (!faseSuperada || !tieneHistoria) return [];
+
     switch (phaseNum) {
       case 1:
         if (user.screeningResult) {

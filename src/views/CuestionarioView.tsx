@@ -6,6 +6,7 @@ import instrumento from '../data/instrumento.json';
 import { generateAndDownloadScreeningPDF } from '../utils/pdfGenerator';
 import { calcularEdadMeses, parseMesTextoANumero } from '../utils/age';
 import { calcularPuntaje, clasificar } from '../dominio/tamizaje';
+import { generarCodigoCaso } from '../data/perfiles';
 
 interface CuestionarioViewProps {
   user: UserProfile;
@@ -191,7 +192,9 @@ export const CuestionarioView: React.FC<CuestionarioViewProps> = ({
         ...user,
         fase: user.fase && user.fase >= 3 ? user.fase : 3,
         screeningAnswers: answers,
-        caseCode: user.caseCode || 'NA-7K3M9',
+        // Si aún no hay caso, se genera uno propio. Antes caía al código de la
+        // demo (NA-7K3M9) y dos familias distintas compartían el mismo caso.
+        caseCode: user.caseCode || generarCodigoCaso(),
         screeningResult: {
           score: finalScore,
           nivel: finalNivel,

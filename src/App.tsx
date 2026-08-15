@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ScreenType, UserProfile, ChildData, LocationData, InsuranceType } from './types';
+import { ScreenType, UserProfile, ChildData, LocationData, InsuranceType, CasePhase } from './types';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { LoginView } from './views/LoginView';
@@ -16,35 +16,13 @@ import { CuestionarioView } from './views/CuestionarioView';
 import { ProfesionalView } from './views/ProfesionalView';
 import { SeguimientoView } from './views/SeguimientoView';
 import { cargarPerfil, guardarPerfil } from './data/perfilLocal';
+import { crearPerfilNuevo, generarCodigoCaso, PERFIL_DEMO } from './data/perfiles';
 
 export default function App() {
   // El perfil se rehidrata de localStorage al arrancar. Sin esto, el celular
   // que la familia escribe al registrarse se perdía al recargar y el botón de
   // WhatsApp volvía a pedirlo.
-  const [user, setUser] = useState<UserProfile>(() => cargarPerfil() ?? {
-    name: 'María',
-    email: 'maria.rodriguez@ejemplo.pe',
-    child: {
-      nickname: 'Luciana',
-      birthDay: '10',
-      birthMonth: 'Diciembre',
-      birthYear: '2024',
-      avatarId: 'cat',
-    },
-    location: {
-      department: 'Lima',
-      province: 'Lima',
-      district: 'Miraflores',
-    },
-    insurance: 'sis',
-    caseCode: 'NA-7K3M9',
-    fase: 3,
-    screeningResult: {
-      score: 5,
-      nivel: 'moderada',
-      completedAt: '2026-08-14T10:30:00Z',
-    },
-  });
+  const [user, setUser] = useState<UserProfile>(() => cargarPerfil() ?? PERFIL_DEMO);
 
   // Cada cambio del perfil se persiste. Es lo que hace que el celular y el id
   // de seguimiento sobrevivan a una recarga.
@@ -142,7 +120,34 @@ export default function App() {
   };
 
   const handleStep3Submit = (insurance: InsuranceType) => {
-    setUser((prev) => ({ ...prev, insurance }));
+    setUser((prev) => {
+      // El registro se completa aquí. Según el modelo de fases, "registro
+      // completado" es la transición 1 -> 2, así que la familia sale de este
+      // paso lista para el tamizaje, no antes.
+      const yaTeniaCaso = Boolean(prev.caseCode);
+      const codigo = prev.caseCode || generarCodigoCaso();
+      const fecha = new Date().toLocaleDateString('es-PE', { day: 'numeric', month: 'short' });
+
+      return {
+        ...prev,
+        insurance,
+        caseCode: codigo,
+        fase: Math.max(prev.fase || 1, 2) as CasePhase,
+        registros: yaTeniaCaso
+          ? prev.registros
+          : [
+              ...(prev.registros || []),
+              {
+                fecha,
+                titulo: 'Registro de caso completado',
+                detalle: `Caso ${codigo} creado por la familia.`,
+                tipo: 'fase_update' as const,
+                origen: 'familia' as const,
+                faseNum: 2 as CasePhase,
+              },
+            ],
+      };
+    });
     setCurrentScreen('dashboard');
   };
 
@@ -190,7 +195,11 @@ export default function App() {
         {currentScreen === 'signup' && (
           <SignupView
             onSignup={({ email, phone }) => {
-              setUser((prev) => ({ ...prev, email, phone }));
+              // REEMPLAZA el perfil, no lo mezcla. Antes se hacía spread sobre
+              // el perfil de demostración y la familia heredaba su fase 3, su
+              // tamizaje y su código de caso: empezaba la ruta a mitad de
+              // camino y con resultados que nunca respondió.
+              setUser(crearPerfilNuevo(email, phone));
               setCurrentScreen('register-step-1');
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
