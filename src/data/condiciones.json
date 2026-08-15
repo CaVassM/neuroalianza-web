@@ -1,0 +1,27 @@
+{
+  "autismo": {
+    "nombre": "Autismo (TEA)",
+    "icono": "puzzle",
+    "sugerencias": [
+      "¿Qué es el autismo?",
+      "Primeros pasos tras el diagnóstico",
+      "¿Qué terapias tienen respaldo?",
+      "¿Qué puedo hacer en casa?",
+      "El colegio y el TEA",
+      "Apoyos del Estado"
+    ],
+    "disponible": true
+  },
+  "tdah": {
+    "nombre": "TDAH",
+    "icono": "zap",
+    "sugerencias": [],
+    "disponible": false
+  },
+  "lenguaje": {
+    "nombre": "Trastornos del lenguaje",
+    "icono": "message-square",
+    "sugerencias": [],
+    "disponible": false
+  }
+}

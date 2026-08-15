@@ -1,0 +1,10 @@
+{
+  "name": "Remix Neuroalianza",
+  "description": "Plataforma peruana de orientación cálida y confiable para familias sobre el desarrollo infantil y sospecha de autismo.",
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

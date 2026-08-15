@@ -1,0 +1,34 @@
+{
+  "id": "mchat-rf-pe",
+  "nombre": "M-CHAT-R/F",
+  "edadMesesMin": 16,
+  "edadMesesMax": 30,
+  "invertidos": [2, 5, 12],
+  "umbrales": [
+    { "min": 0, "max": 2, "nivel": "baja" },
+    { "min": 3, "max": 7, "nivel": "moderada" },
+    { "min": 8, "max": 20, "nivel": "alta" }
+  ],
+  "items": [
+    { "n": 1, "texto": "¿Si usted señala algo al otro lado de la habitación, su hijo(a) lo mira?", "ejemplo": "Por ejemplo, si señala un juguete o un animal, ¿el niño mira hacia el juguete o animal?" },
+    { "n": 2, "texto": "¿Alguna vez se ha preguntado si su hijo(a) es sordo(a)?", "ejemplo": "Por ejemplo, ¿no responde cuando lo llama por su nombre?" },
+    { "n": 3, "texto": "¿Su hijo(a) juega a imaginar o hacer juegos de simulación?", "ejemplo": "Por ejemplo, ¿hace como si tomara de una taza vacía, habla por teléfono, o le da de comer a una muñeca o animal de peluche?" },
+    { "n": 4, "texto": "¿A su hijo(a) le gusta subirse a cosas?", "ejemplo": "Por ejemplo, ¿muebles, juegos del parque, o escaleras?" },
+    { "n": 5, "texto": "¿Su hijo(a) hace movimientos inusuales con los dedos cerca de sus ojos?", "ejemplo": "Por ejemplo, ¿mueve los dedos cerca de sus ojos de manera extraña?" },
+    { "n": 6, "texto": "¿Su hijo(a) señala con un dedo para pedir algo o para pedir ayuda?", "ejemplo": "Por ejemplo, ¿señala un juguete o comida que no puede alcanzar?" },
+    { "n": 7, "texto": "¿Su hijo(a) señala con un dedo para mostrarle algo interesante?", "ejemplo": "Por ejemplo, ¿señala un avión en el cielo o un camión grande en la calle?" },
+    { "n": 8, "texto": "¿Su hijo(a) se interesa en otros niños?", "ejemplo": "Por ejemplo, ¿mira a otros niños, les sonríe o se acerca a ellos?" },
+    { "n": 9, "texto": "¿Su hijo(a) le muestra cosas trayéndoselas o acercándoselas para que usted las vea?", "ejemplo": "No solo para pedir ayuda, sino para compartir. Por ejemplo, le muestra una flor o un peluche." },
+    { "n": 10, "texto": "¿Su hijo(a) responde cuando usted lo llama por su nombre?", "ejemplo": "Por ejemplo, ¿lo mira, habla, balbucea, o interrumpe lo que está haciendo al oír su nombre?" },
+    { "n": 11, "texto": "¿Cuándo usted le sonríe a su hijo(a), él o ella le devuelve la sonrisa?", "ejemplo": "Por ejemplo, ¿le sonríe cuando usted está alegre y le sonríe?" },
+    { "n": 12, "texto": "¿Su hijo(a) se altera por ruidos de todos los días?", "ejemplo": "Por ejemplo, ¿llora o grita al escuchar la aspiradora o música fuerte?" },
+    { "n": 13, "texto": "¿Su hijo(a) camina solo?", "ejemplo": "Por ejemplo, ¿da pasos sin apoyarse en nada?" },
+    { "n": 14, "texto": "¿Su hijo(a) lo mira a los ojos cuando usted le habla, juega con él o ella, o lo viste?", "ejemplo": "Por ejemplo, ¿mantiene contacto visual con usted?" },
+    { "n": 15, "texto": "¿Su hijo(a) trata de copiar lo que usted hace?", "ejemplo": "Por ejemplo, ¿dice adiós con la mano, aplaude, o hace ruiditos divertidos que usted hace?" },
+    { "n": 16, "texto": "¿Si usted se voltea a mirar algo, su hijo(a) voltea para ver qué es lo que usted está mirando?", "ejemplo": "Por ejemplo, si mira al cielo, ¿él o ella también mira al cielo?" },
+    { "n": 17, "texto": "¿Su hijo(a) intenta que usted lo mire?", "ejemplo": "Por ejemplo, ¿lo mira para que lo elogie, o le dice \"mira\" o \"mírame\"?" },
+    { "n": 18, "texto": "¿Su hijo(a) entiende cuando usted le dice que haga algo?", "ejemplo": "Por ejemplo, si no señala, ¿entiende frases como \"pon el libro en la silla\" o \"tráeme la manta\"?" },
+    { "n": 19, "texto": "¿Si algo nuevo pasa, su hijo(a) lo mira a la cara para ver cómo usted reacciona?", "ejemplo": "Por ejemplo, si oye un ruido raro y divertido, o ve un juguete nuevo, ¿le mira la cara?" },
+    { "n": 20, "texto": "¿A su hijo(a) le gustan las actividades de movimiento?", "ejemplo": "Por ejemplo, ¿le gusta que lo columpien, o que lo hagan saltar en sus rodillas?" }
+  ]
+}

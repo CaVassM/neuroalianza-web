@@ -1,0 +1,50 @@
+{
+  "sin_cupos": {
+    "titulo": "Si no hay cupos en tu establecimiento",
+    "pasos": [
+      "Pregunta por la lista de espera y pide que registren tu solicitud.",
+      "Consulta si el establecimiento realiza sesiones de Atención Temprana del Desarrollo (ATD), que están a cargo de enfermería.",
+      "Revisa otros establecimientos cercanos en el mapa."
+    ],
+    "accion": {
+      "texto": "Ver otras opciones cerca",
+      "destino": "mapa"
+    }
+  },
+  "muy_lejos": {
+    "titulo": "Si el establecimiento te queda muy lejos",
+    "pasos": [
+      "Verifica en el mapa de Neuroalianza si existe un Centro de Salud I-3 o I-4 más cercano a tu domicilio.",
+      "Consulta por el servicio de Telesalud / Teleorientación de tu red de salud para una primera orientación sin traslado.",
+      "Coordina con la posta de tu sector para una evaluación inicial en CRED antes de un traslado largo."
+    ],
+    "accion": {
+      "texto": "Buscar en el mapa de establecimientos",
+      "destino": "mapa"
+    }
+  },
+  "costo": {
+    "titulo": "Si te preocupa el costo o no cuentas con cobertura",
+    "pasos": [
+      "Si no tienes seguro, afíliate gratuitamente al SIS Para Todos con tu DNI desde cualquier posta o app virtual.",
+      "La atención integral en los Centros de Salud Mental Comunitarios (CSMC) del MINSA está cubierta por el SIS.",
+      "Solicita orientación a la asistenta social del establecimiento de salud para conocer exoneraciones y programas de apoyo."
+    ],
+    "accion": {
+      "texto": "Ver ruta para personas sin seguro",
+      "destino": "mi-ruta"
+    }
+  },
+  "no_atendieron": {
+    "titulo": "Si no te atendieron o te derivaron a otro lugar",
+    "pasos": [
+      "Solicita que te entreguen la Hoja de Referencia oficial con el sello del médico y el establecimiento de destino.",
+      "Si hubo un rechazo injustificado, acude a la Plataforma de Atención al Usuario en Salud (PAUS) o llama a SUSALUD al 113.",
+      "Lleva el resultado de tu tamizaje impreso para respaldar el motivo de tu consulta ante el personal de triaje."
+    ],
+    "accion": {
+      "texto": "Descargar resultado de tamizaje",
+      "destino": "evaluaciones"
+    }
+  }
+}
