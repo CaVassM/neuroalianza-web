@@ -251,7 +251,7 @@ export function findLocalCorpusAnswer(query: string, childName: string = 'tu hij
   if (q.includes('tdah') || q.includes('adhd') || q.includes('hiperactiv') || q.includes('deficit de atencion') || q.includes('déficit de atención')) {
     return {
       pregunta: query,
-      respuesta: 'Esa pregunta parece ser sobre TDAH. Por ahora Neuroalianza tiene contenido de autismo. Estamos trabajando en las demás condiciones del neurodesarrollo.',
+      respuesta: 'Esa pregunta parece ser sobre TDAH. Por ahora PAN tiene contenido de autismo. Estamos trabajando en las demás condiciones del neurodesarrollo.',
       fuentes: [],
       fueraDeAlcance: true,
       condicionDetectada: 'TDAH',
@@ -260,7 +260,7 @@ export function findLocalCorpusAnswer(query: string, childName: string = 'tu hij
   if (q.includes('trastorno del lenguaje') || q.includes('trastornos del lenguaje') || q.includes('tartamude') || q.includes('dislalia') || q.includes('disfasia')) {
     return {
       pregunta: query,
-      respuesta: 'Esa pregunta parece ser sobre Trastornos del lenguaje. Por ahora Neuroalianza tiene contenido de autismo. Estamos trabajando en las demás condiciones del neurodesarrollo.',
+      respuesta: 'Esa pregunta parece ser sobre Trastornos del lenguaje. Por ahora PAN tiene contenido de autismo. Estamos trabajando en las demás condiciones del neurodesarrollo.',
       fuentes: [],
       fueraDeAlcance: true,
       condicionDetectada: 'Trastornos del lenguaje',

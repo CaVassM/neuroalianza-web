@@ -44,7 +44,7 @@ export async function generateAndDownloadScreeningPDF(options: ScreeningPDFOptio
       : 'Acudir a evaluación médica prioritaria en el centro de salud o CSMC de su jurisdicción para derivación especializada a neuropediatría o psiquiatría infantil.';
 
   // Build target URL for QR
-  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://neuroalianza.pe';
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://PAN.pe';
   const qrUrl = `${origin}/caso/${caseCode}`;
 
   // Generate QR as Data URL (PNG)
@@ -76,7 +76,7 @@ export async function generateAndDownloadScreeningPDF(options: ScreeningPDFOptio
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(20);
   doc.setTextColor(74, 34, 112);
-  doc.text('Neuroalianza', margin + 7, 20);
+  doc.text('PAN', margin + 7, 20);
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
@@ -280,9 +280,9 @@ export async function generateAndDownloadScreeningPDF(options: ScreeningPDFOptio
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7);
   doc.setTextColor(140, 136, 148);
-  doc.text(`Documento generado por Neuroalianza · ${todayDate} · Datos de demostración.`, margin, footerY + 2);
+  doc.text(`Documento generado por PAN · ${todayDate} · Datos de demostración.`, margin, footerY + 2);
   doc.text('Página 1 de 1', pageWidth - margin, footerY + 2, { align: 'right' });
 
   // Save / Download PDF
-  doc.save(`Neuroalianza_Resultado_${caseCode}.pdf`);
+  doc.save(`PAN_Resultado_${caseCode}.pdf`);
 }

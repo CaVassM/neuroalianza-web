@@ -183,7 +183,7 @@ export const DocumentDrawer: React.FC<DocumentDrawerProps> = ({
               {/* Footer */}
               <div className="p-4 border-t border-[#F0EDF5] bg-[#FAF8FD] text-center">
                 <p className="text-[11px] text-[#6E6A75]">
-                  Neuroalianza · Biblioteca clínica y legal del Perú
+                  PAN · Biblioteca clínica y legal del Perú
                 </p>
               </div>
             </motion.div>

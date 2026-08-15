@@ -94,3 +94,132 @@ export function consultar(peticion: ConsultaRequest): Promise<ConsultaResponse> 
 export function salud(): Promise<SaludResponse> {
   return pedir<SaludResponse>('/salud');
 }
+
+/* ------------------------------------------------------------------ *
+ * Seguimiento de la ruta
+ *
+ * El progreso vive en el servidor, no en el navegador: el recordatorio
+ * llega al celular y el registro se hizo probablemente en otra pantalla.
+ * ------------------------------------------------------------------ */
+
+export type EstadoRespuesta = 'bien' | 'regular' | 'mal';
+
+export interface RespuestaSeguimiento {
+  estado: EstadoRespuesta;
+  comentario: string | null;
+  fase: number | null;
+  creado_en: string;
+}
+
+export interface Seguimiento {
+  id: string;
+  nombre_nino: string | null;
+  condicion: string;
+  edad_meses: number | null;
+  distrito: string | null;
+  seguro: string | null;
+  fase: number;
+  nivel_tamizaje: string | null;
+  activo: boolean;
+  creado_en: string;
+  actualizado_en: string;
+  ultimo_aviso_en: string | null;
+  telefono_parcial: string;
+  respuestas: RespuestaSeguimiento[];
+}
+
+export interface SeguimientoCreado extends Seguimiento {
+  enlace: string;
+}
+
+export interface ResultadoEnvio {
+  enviado: boolean;
+  /** Por qué no se envió. Suele ser una protección anti-baneo, no un error. */
+  motivo: string;
+  enlace: string;
+}
+
+export interface EstadoLimites {
+  enviados_ultimas_24h: number;
+  tope_diario: number;
+  total_historico: number;
+  cooldown_horas: number;
+  horario_envio: string;
+  en_horario: boolean;
+}
+
+export interface SeguimientoConMensaje extends Seguimiento {
+  /** Texto de acompañamiento que corresponde al estado enviado. */
+  mensaje: string;
+}
+
+export interface CrearSeguimientoRequest {
+  telefono: string;
+  nombre_nino?: string | null;
+  condicion?: string;
+  edad_meses?: number | null;
+  distrito?: string | null;
+  seguro?: string | null;
+  fase?: number;
+  nivel_tamizaje?: string | null;
+}
+
+export function crearSeguimiento(
+  datos: CrearSeguimientoRequest
+): Promise<SeguimientoCreado> {
+  return pedir<SeguimientoCreado>('/seguimiento', {
+    method: 'POST',
+    body: JSON.stringify(datos),
+  });
+}
+
+export function verSeguimiento(id: string): Promise<Seguimiento> {
+  return pedir<Seguimiento>(`/seguimiento/${encodeURIComponent(id)}`);
+}
+
+export function guardarAvance(
+  id: string,
+  cambios: Partial<Pick<Seguimiento, 'fase' | 'distrito' | 'seguro' | 'nombre_nino' | 'edad_meses' | 'nivel_tamizaje' | 'activo'>>
+): Promise<Seguimiento> {
+  return pedir<Seguimiento>(`/seguimiento/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(cambios),
+  });
+}
+
+export function responderSeguimiento(
+  id: string,
+  estado: EstadoRespuesta,
+  comentario?: string
+): Promise<SeguimientoConMensaje> {
+  return pedir<SeguimientoConMensaje>(
+    `/seguimiento/${encodeURIComponent(id)}/respuesta`,
+    { method: 'POST', body: JSON.stringify({ estado, comentario: comentario ?? null }) }
+  );
+}
+
+/**
+ * Manda el enlace de seguimiento por WhatsApp.
+ *
+ * Devuelve 200 aunque no se envíe: las protecciones anti-baneo frenan a
+ * propósito, y el motivo hay que mostrárselo a la familia.
+ */
+export function enviarEnlacePorWhatsApp(id: string): Promise<ResultadoEnvio> {
+  return pedir<ResultadoEnvio>(
+    `/seguimiento/${encodeURIComponent(id)}/enviar-enlace`,
+    { method: 'POST' }
+  );
+}
+
+export function estadoLimites(): Promise<EstadoLimites> {
+  return pedir<EstadoLimites>('/seguimiento/limites/estado');
+}
+
+export function validarNumero(
+  numero: string
+): Promise<{ valido: boolean; normalizado: string | null }> {
+  return pedir('/whatsapp/validar-numero', {
+    method: 'POST',
+    body: JSON.stringify({ numero }),
+  });
+}

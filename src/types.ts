@@ -10,7 +10,8 @@ export type ScreenType =
   | 'familias'
   | 'evaluaciones'
   | 'cuestionario'
-  | 'caso';
+  | 'caso'
+  | 'seguimiento';
 
 export type InsuranceType = 'sis' | 'essalud' | 'eps' | 'none';
 
@@ -84,6 +85,10 @@ export interface CaseData {
 export interface UserProfile {
   name: string;
   email: string;
+  /** Celular de contacto, 9 dígitos sin código de país. Se usa para avisos por WhatsApp. */
+  phone?: string;
+  /** Id del seguimiento en el servidor. Es la credencial del enlace: no mostrar. */
+  seguimientoId?: string;
   child: ChildData;
   location: LocationData;
   insurance: InsuranceType;

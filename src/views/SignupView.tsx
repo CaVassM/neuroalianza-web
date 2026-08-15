@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { Logo } from '../components/Logo';
-import { ClipboardList, MapPin, ShieldCheck, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { ClipboardList, MapPin, ShieldCheck, Eye, EyeOff, AlertCircle, MessageCircle } from 'lucide-react';
 
 interface SignupViewProps {
-  onSignup: (email: string) => void;
+  onSignup: (datos: { email: string; phone: string }) => void;
   onGoToLogin: () => void;
 }
 
 export const SignupView: React.FC<SignupViewProps> = ({ onSignup, onGoToLogin }) => {
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [termsAccepted, setTermsAccepted] = useState(false);
@@ -17,15 +18,22 @@ export const SignupView: React.FC<SignupViewProps> = ({ onSignup, onGoToLogin })
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const isEmailValid = emailRegex.test(email.trim());
+
+  // Un celular peruano son 9 dígitos y empieza por 9. Guardamos solo los
+  // dígitos: el servicio de WhatsApp le antepone el código de país.
+  const phoneDigits = phone.replace(/\D/g, '');
+  const isPhoneValid = /^9\d{8}$/.test(phoneDigits);
+
   const isPasswordValid = password.length >= 8;
   const doPasswordsMatch = password === confirmPassword;
 
-  const isValid = isEmailValid && isPasswordValid && doPasswordsMatch && termsAccepted;
+  const isValid =
+    isEmailValid && isPhoneValid && isPasswordValid && doPasswordsMatch && termsAccepted;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!isValid) return;
-    onSignup(email.trim());
+    onSignup({ email: email.trim(), phone: phoneDigits });
   };
 
   return (
@@ -81,7 +89,7 @@ export const SignupView: React.FC<SignupViewProps> = ({ onSignup, onGoToLogin })
             Qué datos usamos
           </h4>
           <p className="text-[13px] text-white/80 leading-relaxed pr-4">
-            Solo la edad de tu hijo, tu distrito y tu tipo de seguro, para personalizar la orientación. No pedimos DNI ni datos personales de identificación.
+            La edad de tu hijo, tu distrito y tu tipo de seguro, para personalizar la orientación, y tu celular para avisarte por WhatsApp sobre tu caso. No pedimos DNI ni documentos de identidad.
           </p>
         </div>
       </div>
@@ -113,6 +121,37 @@ export const SignupView: React.FC<SignupViewProps> = ({ onSignup, onGoToLogin })
                   <p className="mt-1.5 text-[12px] font-medium text-rose-600 flex items-center gap-1">
                     <AlertCircle className="w-3.5 h-3.5" />
                     <span>Ingresa un correo con formato válido (ej. usuario@correo.com).</span>
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-[13px] font-semibold text-[#2E2A33] mb-2">
+                  Celular
+                </label>
+                <div className="flex items-stretch gap-2">
+                  <span className="flex items-center px-3 rounded-lg border border-[#E5E1EC] bg-[#FAF8FD] text-[15px] font-semibold text-[#6E6A75] select-none">
+                    +51
+                  </span>
+                  <input
+                    type="tel"
+                    inputMode="numeric"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="987 654 321"
+                    maxLength={12}
+                    className="flex-1 min-w-0 px-4 py-3 rounded-lg border border-[#E5E1EC] bg-white text-[15px] text-[#2E2A33] placeholder-[#6E6A75]/60 focus:outline-none focus:border-[#4A2270] focus:ring-1 focus:ring-[#4A2270] transition-colors"
+                  />
+                </div>
+                {phone.length > 0 && !isPhoneValid ? (
+                  <p className="mt-1.5 text-[12px] font-medium text-rose-600 flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5" />
+                    <span>Debe ser un celular de 9 dígitos que empiece con 9.</span>
+                  </p>
+                ) : (
+                  <p className="mt-1.5 text-[12px] text-[#6E6A75] flex items-center gap-1.5">
+                    <MessageCircle className="w-3.5 h-3.5 shrink-0 text-[#4A2270]" />
+                    <span>Te escribiremos por WhatsApp solo para avisos de tu caso.</span>
                   </p>
                 )}
               </div>
@@ -188,7 +227,7 @@ export const SignupView: React.FC<SignupViewProps> = ({ onSignup, onGoToLogin })
                   )}
                 </button>
                 <p className="text-[13px] text-[#6E6A75] leading-relaxed cursor-pointer" onClick={() => setTermsAccepted(!termsAccepted)}>
-                  Acepto los términos de uso y la política de privacidad de Neuroalianza.
+                  Acepto los términos de uso y la política de privacidad de PAN.
                 </p>
               </div>
 
@@ -223,7 +262,7 @@ export const SignupView: React.FC<SignupViewProps> = ({ onSignup, onGoToLogin })
         </div>
 
         <div className="text-center pt-8">
-          <p className="text-[11px] text-[#6E6A75]">Neuroalianza no realiza diagnósticos.</p>
+          <p className="text-[11px] text-[#6E6A75]">PAN no realiza diagnósticos.</p>
         </div>
       </div>
     </div>

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { UserProfile, InsuranceType, ScreenType, BarrierReport } from '../types';
 import { DondeAtenderteSection } from '../components/DondeAtenderte/DondeAtenderteSection';
 import { RastreadorFase } from '../components/PhaseTracker/RastreadorFase';
+import { BotonSeguimientoWhatsApp } from '../components/BotonSeguimientoWhatsApp';
 import { MONTHS, YEARS } from '../constants/data';
 import { generateAndDownloadScreeningPDF } from '../utils/pdfGenerator';
 import alternativasData from '../data/alternativas.json';
@@ -515,32 +516,47 @@ export const MiRutaView: React.FC<MiRutaViewProps> = ({ user, onUpdateUser, onNa
             <p className="text-xs sm:text-[13px] text-[#6E6A75] leading-relaxed">{routeDetails.step2Desc}</p>
           </div>
 
-          {/* Step 3 */}
-          <div className="bg-white rounded-2xl border border-[#E5E1EC] p-6 space-y-3 shadow-2xs relative overflow-hidden">
-            <div className="w-8 h-8 rounded-full bg-[#E9DFF5] text-[#4A2270] text-xs font-bold flex items-center justify-center">
+          {/* Paso 3: las recomendaciones.
+              Antes este hueco lo ocupaba el destino final de la derivación
+              (CSMC / hospital) y las recomendaciones iban sueltas debajo. Se
+              invirtió: lo accionable para la familia es qué llevar y qué pedir
+              en la cita, no el nombre del hospital al que quizá llegue meses
+              después. */}
+          <div className="bg-[#FAF8FD] rounded-2xl border border-[#D5CCE0] p-6 space-y-3 shadow-2xs relative overflow-hidden">
+            <div className="w-8 h-8 rounded-full bg-[#4A2270] text-white text-xs font-bold flex items-center justify-center">
               3
             </div>
-            <h3 className="text-base font-bold text-[#2E2A33]">{routeDetails.step3Title}</h3>
-            <p className="text-xs sm:text-[13px] text-[#6E6A75] leading-relaxed">{routeDetails.step3Desc}</p>
+            <h3 className="text-base font-bold text-[#2E2A33] flex items-center gap-1.5">
+              <ShieldCheck className="w-4 h-4 text-[#4A2270] shrink-0" />
+              <span>Recomendaciones para tu cita</span>
+            </h3>
+            <ul className="space-y-2 text-xs sm:text-[13px] text-[#2E2A33]">
+              {routeDetails.tips.map((tip, idx) => (
+                <li key={idx} className="flex items-start gap-2">
+                  <span className="text-[#6B3FA0] font-bold leading-none mt-0.5">•</span>
+                  <span className="leading-relaxed">{tip}</span>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
-
-        {/* Tips & Recommendations Box */}
-        <div className="bg-[#FAF8FD] rounded-2xl border border-[#E5E1EC] p-5 sm:p-6 space-y-3">
-          <h4 className="text-xs font-bold uppercase tracking-wider text-[#4A2270] flex items-center gap-1.5">
-            <ShieldCheck className="w-4 h-4" />
-            <span>Recomendaciones clave para tu cita</span>
-          </h4>
-          <ul className="space-y-2 text-xs text-[#2E2A33]">
-            {routeDetails.tips.map((tip, idx) => (
-              <li key={idx} className="flex items-start gap-2">
-                <span className="text-[#6B3FA0] font-bold">•</span>
-                <span>{tip}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
       </section>
+
+      {/* SEGUIMIENTO POR WHATSAPP.
+          Va después de la ruta: primero la familia ve qué sigue, y recién
+          entonces tiene sentido ofrecerle llevarse el enlace al celular. */}
+      <div className="bg-white rounded-2xl border border-[#E5E1EC] p-6 sm:p-8 space-y-4 shadow-xs">
+        <div>
+          <h3 className="text-base font-bold text-[#2E2A33]">
+            Lleva tu ruta en el celular
+          </h3>
+          <p className="text-xs sm:text-[13px] text-[#6E6A75] leading-relaxed mt-1">
+            Te mandamos un enlace por WhatsApp para retomar tu ruta cuando quieras y
+            contarnos cómo te fue.
+          </p>
+        </div>
+        <BotonSeguimientoWhatsApp user={user} onUpdateUser={onUpdateUser} />
+      </div>
 
       {/* 3. GUIÓN PARA HABLAR CON EL MÉDICO */}
       <div className="bg-white rounded-2xl border border-[#E5E1EC] p-6 sm:p-8 space-y-4 shadow-xs">

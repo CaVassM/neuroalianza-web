@@ -249,7 +249,7 @@ export const ConoceView: React.FC<ConoceViewProps> = ({ onNavigateToEvaluaciones
         <div className="flex items-center gap-2">
           <span className="w-3 h-3 rounded-full bg-[#2E7D5B]" />
           <h2 className="text-xl sm:text-2xl font-bold text-[#2E2A33]">
-            Qué sí hacemos en Neuroalianza
+            Qué sí hacemos en PAN
           </h2>
         </div>
 
@@ -519,7 +519,7 @@ export const ConoceView: React.FC<ConoceViewProps> = ({ onNavigateToEvaluaciones
                   <div className="w-8 h-8 rounded-lg bg-[#E9DFF5] flex items-center justify-center">
                     <Play className="w-4 h-4 fill-[#4A2270] text-[#4A2270]" />
                   </div>
-                  <h3 className="text-base font-bold text-[#2E2A33]">Cómo funciona Neuroalianza</h3>
+                  <h3 className="text-base font-bold text-[#2E2A33]">Cómo funciona PAN</h3>
                 </div>
                 <button
                   onClick={() => setShowVideoModal(false)}

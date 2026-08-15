@@ -14,10 +14,14 @@ import { FamiliasView } from './views/FamiliasView';
 import { EvaluacionesView } from './views/EvaluacionesView';
 import { CuestionarioView } from './views/CuestionarioView';
 import { ProfesionalView } from './views/ProfesionalView';
+import { SeguimientoView } from './views/SeguimientoView';
+import { cargarPerfil, guardarPerfil } from './data/perfilLocal';
 
 export default function App() {
-  // State for user registration & profile
-  const [user, setUser] = useState<UserProfile>({
+  // El perfil se rehidrata de localStorage al arrancar. Sin esto, el celular
+  // que la familia escribe al registrarse se perdía al recargar y el botón de
+  // WhatsApp volvía a pedirlo.
+  const [user, setUser] = useState<UserProfile>(() => cargarPerfil() ?? {
     name: 'María',
     email: 'maria.rodriguez@ejemplo.pe',
     child: {
@@ -42,16 +46,48 @@ export default function App() {
     },
   });
 
+  // Cada cambio del perfil se persiste. Es lo que hace que el celular y el id
+  // de seguimiento sobrevivan a una recarga.
+  useEffect(() => {
+    guardarPerfil(user);
+  }, [user]);
+
   // Current view state
   const [currentScreen, setCurrentScreen] = useState<ScreenType>('dashboard');
   const [profesionalCode, setProfesionalCode] = useState<string>('NA-7K3M9');
+  const [seguimientoId, setSeguimientoId] = useState<string>('');
 
-  // Detect URL routing for /caso/:codigo or hash #/caso/:codigo or ?caso=...
+  // Detect URL routing for /caso/:codigo, /seguimiento/:id, sus variantes con
+  // hash, y ?caso= / ?seguimiento=.
+  //
+  // El enlace de seguimiento llega por WhatsApp, así que tiene que funcionar
+  // pegado tal cual en el navegador del celular. Se soportan las tres formas
+  // porque no todo hosting reescribe rutas a index.html.
   useEffect(() => {
     const handleUrlRouting = () => {
       const pathname = window.location.pathname;
       const hash = window.location.hash;
       const searchParams = new URLSearchParams(window.location.search);
+
+      const seguimientoFromParam = searchParams.get('seguimiento');
+      if (seguimientoFromParam) {
+        setSeguimientoId(seguimientoFromParam);
+        setCurrentScreen('seguimiento');
+        return;
+      }
+
+      const desdeRuta = (base: string, texto: string) =>
+        texto.startsWith(base)
+          ? texto.split(base)[1]?.split('/')[0]?.split('?')[0]?.split('#')[0]
+          : undefined;
+
+      const seguimientoCode =
+        desdeRuta('/seguimiento/', pathname) ?? desdeRuta('#/seguimiento/', hash);
+      if (seguimientoCode) {
+        setSeguimientoId(seguimientoCode);
+        setCurrentScreen('seguimiento');
+        return;
+      }
 
       const casoFromParam = searchParams.get('caso');
       if (casoFromParam) {
@@ -121,7 +157,8 @@ export default function App() {
     currentScreen === 'register-step-1' ||
     currentScreen === 'register-step-2' ||
     currentScreen === 'register-step-3' ||
-    currentScreen === 'profesional';
+    currentScreen === 'profesional' ||
+    currentScreen === 'seguimiento';
 
   return (
     <div className="min-h-[100dvh] w-full bg-[#F7F5FA] text-[#2E2A33] font-sans flex flex-col selection:bg-[#E9DFF5] selection:text-[#4A2270] overflow-x-hidden relative">
@@ -152,8 +189,8 @@ export default function App() {
 
         {currentScreen === 'signup' && (
           <SignupView
-            onSignup={(email) => {
-              setUser((prev) => ({ ...prev, email }));
+            onSignup={({ email, phone }) => {
+              setUser((prev) => ({ ...prev, email, phone }));
               setCurrentScreen('register-step-1');
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
@@ -260,6 +297,17 @@ export default function App() {
             onUpdateUser={(updated) => setUser(updated)}
             onNavigate={(screen) => {
               setCurrentScreen(screen);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+          />
+        )}
+
+        {currentScreen === 'seguimiento' && (
+          <SeguimientoView
+            id={seguimientoId}
+            onIrAlInicio={() => {
+              setCurrentScreen('mi-ruta');
+              window.history.pushState({}, '', '/');
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
           />

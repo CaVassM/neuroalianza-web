@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Tooltip, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Tooltip, Circle, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import { Establecimiento } from '../../types';
@@ -14,6 +14,8 @@ interface MapComponentProps {
   selectedId: string | null;
   onSelectEstablecimiento: (item: Establecimiento) => void;
   onOpenFicha: (item: Establecimiento) => void;
+  /** Radio de búsqueda en km. Se dibuja alrededor de la ubicación de la familia. */
+  radioKm?: number;
 }
 
 // Controller component to handle panning, fitBounds & size invalidation
@@ -74,6 +76,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
   selectedId,
   onSelectEstablecimiento,
   onOpenFicha,
+  radioKm = 2,
 }) => {
   const [mobileActiveItem, setMobileActiveItem] = useState<Establecimiento | null>(null);
 
@@ -166,6 +169,22 @@ export const MapComponent: React.FC<MapComponentProps> = ({
         />
 
         {/* User location marker */}
+        {/* Radio de búsqueda. Va ANTES de los marcadores para quedar por
+            debajo de ellos, y sin relleno opaco para no tapar el mapa. */}
+        <Circle
+          center={[userLocation.lat, userLocation.lng]}
+          radius={radioKm * 1000}
+          pathOptions={{
+            color: '#4A2270',
+            weight: 1.5,
+            opacity: 0.55,
+            fillColor: '#6B3FA0',
+            fillOpacity: 0.07,
+            dashArray: '6 6',
+          }}
+          interactive={false}
+        />
+
         <Marker
           position={[userLocation.lat, userLocation.lng]}
           icon={userPinIcon}

@@ -9,7 +9,7 @@ export const Footer: React.FC<FooterProps> = ({ className = '', onOpenProfesiona
   return (
     <footer className={`py-4 px-4 flex flex-col sm:flex-row items-center justify-between gap-2 max-w-6xl w-full mx-auto shrink-0 text-center ${className}`}>
       <p className="text-xs text-[#6E6A75]">
-        Neuroalianza no realiza diagnósticos clínicos. Orientación basada en NTS N° 238-MINSA.
+        PAN no realiza diagnósticos clínicos. Orientación basada en NTS N° 238-MINSA.
       </p>
       {onOpenProfesional && (
         <button

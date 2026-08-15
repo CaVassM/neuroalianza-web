@@ -53,7 +53,7 @@ export const Logo: React.FC<LogoProps> = ({
         <circle cx="16" cy="16" r="2" fill={strokeColor} />
       </svg>
       <span className={`${textSizes} ${textColor} font-fraunces`}>
-        Neuroalianza
+        PAN
       </span>
     </div>
   );

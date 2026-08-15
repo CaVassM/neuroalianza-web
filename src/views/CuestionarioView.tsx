@@ -221,12 +221,16 @@ export const CuestionarioView: React.FC<CuestionarioViewProps> = ({
       ? `Algunas respuestas muestran conductas que merecen una mirada más detallada de un profesional. Esto permite acompañar a ${childName} a tiempo.`
       : `Varias respuestas sugieren que vale la pena que un profesional observe a ${childName} con más detalle. Esto es frecuente y tiene solución cuando se atiende a tiempo.`;
 
+  // El semáforo define a dónde derivar, y la regla es distinta en cada color:
+  //   verde    -> seguir con los controles CRED de rutina
+  //   amarillo -> acudir a un control CRED
+  //   rojo     -> sacar cita con pediatría; si el establecimiento no tiene, CRED
   const nextStepText =
     nivel === 'baja'
       ? `Continúa con los controles CRED habituales. Si ${childName} tiene menos de 2 años, repite esta evaluación a los 24 meses.`
       : nivel === 'moderada'
-      ? 'Lleva este resultado a tu control CRED. Ahí el personal de salud aplicará una entrevista de seguimiento que complementa estas 20 preguntas.'
-      : 'Acude a tu establecimiento de salud esta semana y muestra este resultado. Corresponde una derivación a evaluación especializada.';
+      ? 'Acude a un control CRED en tu centro de salud y muestra este resultado. Ahí el personal aplicará una entrevista de seguimiento que complementa estas 20 preguntas.'
+      : 'Saca una cita con pediatría esta semana y muestra este resultado. Si tu establecimiento no cuenta con pediatría, pide un control CRED: desde ahí te derivan a la evaluación especializada.';
 
   const circleStyle =
     nivel === 'baja'

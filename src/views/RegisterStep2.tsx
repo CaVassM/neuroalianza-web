@@ -139,7 +139,7 @@ export const RegisterStep2: React.FC<RegisterStep2Props> = ({
       </motion.div>
 
       <div className="text-center pt-8 pb-4">
-        <p className="text-[12px] text-[#6E6A75]">Neuroalianza orienta a familias y no realiza diagnósticos.</p>
+        <p className="text-[12px] text-[#6E6A75]">PAN orienta a familias y no realiza diagnósticos.</p>
       </div>
     </div>
   );

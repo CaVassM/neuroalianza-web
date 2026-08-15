@@ -1,5 +1,6 @@
 import { UserProfile } from '../types';
-import { CASOS_DEMO_MAP, DEMO_CASO_1, DEMO_CASO_2, DEMO_CASO_3 } from './demo';
+// Los casos demo viven en src/datos/ (con "s"), no en src/data/.
+import { CASOS_DEMO_MAP, DEMO_CASO_1 } from '../datos/demo';
 import { calcularEdadMeses } from '../utils/age';
 
 const STORAGE_KEY_USER = 'neuroalianza_user_profile';

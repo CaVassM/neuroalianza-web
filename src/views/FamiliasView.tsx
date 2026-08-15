@@ -234,7 +234,7 @@ export const FamiliasView: React.FC<FamiliasViewProps> = ({
       // pasar desapercibido: si el backend falla queremos enterarnos, no ver
       // respuestas enlatadas creyendo que vienen del modelo.
       console.error(
-        '[Neuroalianza] No se pudo consultar el backend; usando el corpus local de respaldo.',
+        '[PAN] No se pudo consultar el backend; usando el corpus local de respaldo.',
         { url: import.meta.env.VITE_API_URL, error: err },
       );
       const localResult = findLocalCorpusAnswer(textToQuery, childName);
@@ -450,7 +450,7 @@ export const FamiliasView: React.FC<FamiliasViewProps> = ({
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-[#2E7D5B] animate-pulse"></span>
               <span className="text-xs font-semibold text-[#4A2270]">
-                Asistente clínico Neuroalianza · Fuentes verificadas
+                Asistente clínico PAN · Fuentes verificadas
               </span>
             </div>
             <button

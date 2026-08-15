@@ -64,7 +64,7 @@ export const EvaluacionesView: React.FC<EvaluacionesViewProps> = ({
       <div className="bg-[#E9DFF5] border border-[#D5CCE0] rounded-xl p-4 flex gap-3 items-start">
         <Info className="w-5 h-5 text-[#4A2270] shrink-0 mt-0.5" />
         <p className="text-[15px] text-[#4A2270] font-medium leading-relaxed">
-          Neuroalianza está pensada para acompañar distintas condiciones del neurodesarrollo. Por ahora tenemos disponible la herramienta de autismo.
+          PAN está pensada para acompañar distintas condiciones del neurodesarrollo. Por ahora tenemos disponible la herramienta de autismo.
         </p>
       </div>
 

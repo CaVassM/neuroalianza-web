@@ -1,4 +1,4 @@
-# Neuroalianza — frontend
+# PAN — frontend
 
 Aplicación web para familias peruanas que acompañan a un niño con una condición
 del neurodesarrollo. Guía la ruta de atención por fases, ubica dónde atenderse y

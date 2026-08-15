@@ -116,6 +116,42 @@ export const RegisterStep3: React.FC<RegisterStep3Props> = ({
             })}
           </div>
 
+          {/* Sin seguro no significa sin atención: el SIS es gratuito y la
+              afiliación se hace en el mismo establecimiento. Es de lo más útil
+              que le podemos decir a una familia en este punto. */}
+          <AnimatePresence>
+            {selectedInsurance === 'none' && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.25 }}
+                className="overflow-hidden"
+              >
+                <div className="bg-[#F4EFFB] border border-[#D5CCE0] rounded-2xl p-5 flex items-start gap-3.5">
+                  <div className="w-9 h-9 rounded-xl bg-[#E9DFF5] flex items-center justify-center shrink-0">
+                    <Heart className="w-4.5 h-4.5 text-[#4A2270]" />
+                  </div>
+                  <div className="space-y-2">
+                    <h4 className="text-[14px] font-bold text-[#4A2270]">
+                      Puedes afiliarte gratis al SIS
+                    </h4>
+                    <p className="text-[13px] text-[#2E2A33] leading-relaxed">
+                      El <strong>Seguro Integral de Salud</strong> es gratuito y cubre
+                      consultas, controles CRED y derivaciones a especialistas. No necesitas
+                      estar afiliado antes de ir: puedes tramitarlo en el mismo centro de
+                      salud.
+                    </p>
+                    <p className="text-[12.5px] text-[#6E6A75] leading-relaxed">
+                      Lleva tu DNI y el del niño o niña. Si no tiene DNI, en el
+                      establecimiento te orientan para obtenerlo.
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* Actions */}
           <div className="pt-4 flex items-center justify-between">
             <button
@@ -138,7 +174,7 @@ export const RegisterStep3: React.FC<RegisterStep3Props> = ({
       </motion.div>
 
       <div className="text-center pt-8 pb-4">
-        <p className="text-[12px] text-[#6E6A75]">Neuroalianza no realiza diagnósticos ni comparte tus datos.</p>
+        <p className="text-[12px] text-[#6E6A75]">PAN no realiza diagnósticos ni comparte tus datos.</p>
       </div>
 
       <AnimatePresence>

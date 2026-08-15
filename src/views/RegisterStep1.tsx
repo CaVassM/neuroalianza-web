@@ -201,7 +201,7 @@ export const RegisterStep1: React.FC<RegisterStep1Props> = ({
 
       <div className="text-center pt-8 pb-4">
         <p className="text-[12px] text-[#6E6A75]">
-          Neuroalianza orienta a familias y no reemplaza una consulta médica.
+          PAN orienta a familias y no reemplaza una consulta médica.
         </p>
       </div>
     </div>

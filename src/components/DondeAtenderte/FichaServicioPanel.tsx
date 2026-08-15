@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { Establecimiento } from '../../types';
 import { formatDistancia } from '../../utils/distancia';
+import { derivacionRecomendada } from '../../dominio/derivacion';
 import { 
   X, 
   MapPin, 
@@ -51,6 +52,7 @@ export const FichaServicioPanel: React.FC<FichaServicioPanelProps> = ({
 
   const distanceLabel = item.distanciaKm !== undefined ? formatDistancia(item.distanciaKm) : '';
   const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${item.lat},${item.lng}`;
+  const derivacion = derivacionRecomendada(item);
 
   // Institutional coverage explanation
   const getSeguroText = () => {
@@ -234,6 +236,60 @@ export const FichaServicioPanel: React.FC<FichaServicioPanelProps> = ({
                 )}
               </div>
 
+              {/* 1. CONTACTO Y CITA — va primero a propósito.
+                  Quien abre esta ficha ya decidió que le interesa el sitio; lo
+                  siguiente que necesita es cómo llegar a una cita, no la lista
+                  de servicios. */}
+              <div className="bg-white border-2 border-[#D5CCE0] rounded-2xl p-5 space-y-4">
+                <h3 className="text-[16px] font-bold text-[#2E2A33] flex items-center gap-2">
+                  <Phone className="w-4 h-4 text-[#4A2270]" />
+                  <span>Cómo sacar tu cita</span>
+                </h3>
+
+                {/* Por qué servicio entrar: pediatría si la hay, CRED si no. */}
+                <div className="bg-[#F4EFFB] border border-[#D5CCE0] rounded-xl p-4 space-y-1.5">
+                  <p className="text-[13px] font-bold text-[#4A2270]">
+                    {derivacion.etiqueta}
+                  </p>
+                  <p className="text-[12.5px] text-[#2E2A33] leading-relaxed">
+                    {derivacion.instruccion}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <a
+                    href={`tel:${item.telefono.replace(/[^\d+]/g, '')}`}
+                    className="p-4 rounded-xl bg-[#FAF8FD] border border-[#E5E1EC] hover:border-[#4A2270] transition-all space-y-1.5 block"
+                  >
+                    <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#4A2270]">
+                      <Phone className="w-3.5 h-3.5" />
+                      <span>Llamar</span>
+                    </div>
+                    <span className="text-[13.5px] font-bold text-[#4A2270] block truncate">
+                      {item.telefono}
+                    </span>
+                  </a>
+
+                  <div className="p-4 rounded-xl bg-[#FAF8FD] border border-[#E5E1EC] space-y-1.5">
+                    <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#4A2270]">
+                      <Clock className="w-3.5 h-3.5" />
+                      <span>Atención presencial</span>
+                    </div>
+                    <p className="text-[13.5px] font-semibold text-[#2E2A33] leading-snug">
+                      {item.horario}
+                    </p>
+                  </div>
+                </div>
+
+                {/* No inventamos un enlace de cita en línea ni un correo: el
+                    registro público no los incluye. Decimos dónde preguntarlo. */}
+                <p className="text-[11.5px] text-[#8A8594] italic leading-relaxed border-t border-[#F0EDF5] pt-3">
+                  El registro público no incluye correo ni enlace de cita en línea. Si
+                  prefieres agendar sin ir, pregunta por ese canal al llamar: varios
+                  establecimientos de {item.institucion} lo tienen habilitado.
+                </p>
+              </div>
+
               {/* 3. "¿Dónde queda?" — dirección, distrito, y botón secundario "Abrir en Google Maps" */}
               <div className="bg-[#FAF8FD] border border-[#E5E1EC] rounded-2xl p-5 space-y-3">
                 <h3 className="text-[15px] font-bold text-[#2E2A33] flex items-center gap-2">
@@ -295,31 +351,7 @@ export const FichaServicioPanel: React.FC<FichaServicioPanelProps> = ({
                 </p>
               </div>
 
-              {/* 6. "Horario" y "Teléfono" tal como vienen, sin reformatear */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <div className="p-4 rounded-xl bg-[#FAF8FD] border border-[#E5E1EC] space-y-1.5">
-                  <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#4A2270]">
-                    <Clock className="w-3.5 h-3.5" />
-                    <span>Horario</span>
-                  </div>
-                  <p className="text-[13.5px] font-semibold text-[#2E2A33]">
-                    {item.horario}
-                  </p>
-                </div>
-
-                <div className="p-4 rounded-xl bg-[#FAF8FD] border border-[#E5E1EC] space-y-1.5">
-                  <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#4A2270]">
-                    <Phone className="w-3.5 h-3.5" />
-                    <span>Teléfono</span>
-                  </div>
-                  <a
-                    href={`tel:${item.telefono.replace(/[^\d+]/g, '')}`}
-                    className="text-[13.5px] font-bold text-[#4A2270] hover:underline block truncate"
-                  >
-                    {item.telefono}
-                  </a>
-                </div>
-              </div>
+              {/* El horario y el teléfono subieron al bloque de contacto. */}
 
               {/* 7. "¿Qué necesitas llevar?" — lista de requisitos */}
               <div className="space-y-3">

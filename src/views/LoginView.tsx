@@ -177,7 +177,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin, onGoToRegister })
         </div>
 
         <div className="text-center pt-8">
-          <p className="text-[11px] text-[#6E6A75]">Neuroalianza no realiza diagnósticos.</p>
+          <p className="text-[11px] text-[#6E6A75]">PAN no realiza diagnósticos.</p>
         </div>
       </div>
     </div>

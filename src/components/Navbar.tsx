@@ -105,7 +105,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     }}
                     className="w-full text-left px-3 py-2 text-xs text-[#2E2A33] hover:bg-[#F7F5FA] rounded-lg transition-colors flex items-center justify-between"
                   >
-                    <span>Conoce Neuroalianza</span>
+                    <span>Conoce PAN</span>
                     <span className="text-[10px] bg-[#E9DFF5] text-[#4A2270] px-1.5 py-0.5 rounded">Guía</span>
                   </button>
 
@@ -172,7 +172,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             }}
             className="px-4 py-2.5 text-sm text-left rounded-xl text-[#4A2270] hover:bg-[#F7F5FA] font-medium"
           >
-            ¿Qué es Neuroalianza?
+            ¿Qué es PAN?
           </button>
         </nav>
       )}

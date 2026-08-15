@@ -453,6 +453,9 @@ export const DondeAtenderteSection: React.FC<DondeAtenderteSectionProps> = ({
               setSelectedCardCodigo(item.codigo);
             }}
             onOpenFicha={handleOpenFicha}
+            // El radio dibujado tiene que coincidir con el que se está
+            // filtrando: con "sin cupos" la búsqueda se amplía a 10 km.
+            radioKm={activeBarrierFilter === 'sin_cupos' ? 10 : 2}
           />
 
           <div className="bg-white rounded-xl border border-[#E5E1EC] px-4 py-2.5 flex items-center justify-between text-[11.5px] text-[#6E6A75] flex-wrap gap-2">

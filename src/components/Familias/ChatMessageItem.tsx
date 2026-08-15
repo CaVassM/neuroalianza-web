@@ -163,7 +163,7 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
             /* Lavender box for out of scope condition */
             <div className="p-4 sm:p-5 rounded-2xl bg-[#F4EFFB] border border-[#D5CCE0] text-[#2E2A33] space-y-3 shadow-2xs">
               <p className="text-xs sm:text-sm text-[#2E2A33] leading-relaxed">
-                Esa pregunta parece ser sobre <span className="font-bold">{message.condicionDetectada || 'otra condición'}</span>. Por ahora Neuroalianza tiene contenido de autismo. Estamos trabajando en las demás condiciones del neurodesarrollo.
+                Esa pregunta parece ser sobre <span className="font-bold">{message.condicionDetectada || 'otra condición'}</span>. Por ahora PAN tiene contenido de autismo. Estamos trabajando en las demás condiciones del neurodesarrollo.
               </p>
               {suggestions && suggestions.length > 0 && (
                 <div className="pt-2 border-t border-[#E9DFF5] space-y-2">

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import QRCode from 'qrcode';
-import { CaseData, UserProfile } from '../types';
+import { CaseData, CasePhase, UserProfile } from '../types';
 import { getCaseByCode } from '../data/casosDemo';
 import { Logo } from '../components/Logo';
 import { RastreadorCompacto } from '../components/PhaseTracker/RastreadorCompacto';
@@ -60,7 +60,7 @@ export const ProfesionalView: React.FC<ProfesionalViewProps> = ({
   // Generate QR Code URL
   useEffect(() => {
     if (!caseData) return;
-    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://neuroalianza.pe';
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://PAN.pe';
     const caseUrl = `${origin}/caso/${currentCode}`;
     QRCode.toDataURL(caseUrl, {
       margin: 1,
@@ -193,17 +193,22 @@ export const ProfesionalView: React.FC<ProfesionalViewProps> = ({
   const handleRegisterAtencion = (e: React.FormEvent) => {
     e.preventDefault();
 
-    let targetPhase = caseData?.fase || 1;
+    let targetPhase: CasePhase = caseData?.fase || 1;
     let actionTitle = '';
 
+    // Math.max devuelve number, y CasePhase es una unión de literales 1..6.
+    // El cast es seguro porque ambos operandos ya son fases válidas.
+    const avanzarHasta = (minima: CasePhase): CasePhase =>
+      Math.max(targetPhase, minima) as CasePhase;
+
     if (selectedAtencionType === 'tamizaje') {
-      targetPhase = Math.max(targetPhase, 2);
+      targetPhase = avanzarHasta(2);
       actionTitle = 'Apliqué la entrevista o ficha de despistaje (Tamizaje)';
     } else if (selectedAtencionType === 'referencia') {
-      targetPhase = Math.max(targetPhase, 4);
+      targetPhase = avanzarHasta(4);
       actionTitle = 'Emití una hoja de referencia a servicio especializado';
     } else if (selectedAtencionType === 'diagnostico') {
-      targetPhase = Math.max(targetPhase, 5);
+      targetPhase = avanzarHasta(5);
       actionTitle = 'Se emitió un diagnóstico o informe definitivo';
     }
 
@@ -740,7 +745,7 @@ export const ProfesionalView: React.FC<ProfesionalViewProps> = ({
         {/* Footer */}
         <footer className="bg-white border border-[#E5E1EC] rounded-2xl p-5 text-center text-xs text-[#6E6A75] leading-relaxed space-y-1.5 shadow-2xs">
           <p className="font-semibold text-[#2E2A33]">
-            Neuroalianza · Sistema de orientación e información del neurodesarrollo infantil
+            PAN · Sistema de orientación e información del neurodesarrollo infantil
           </p>
           <p className="text-[11.5px] text-[#8E8A95] max-w-2xl mx-auto">
             Esta vista de solo lectura presenta la información registrada por el cuidador. La decisión diagnóstica y terapéutica corresponde exclusivamente al equipo médico y profesional de salud tratante en el Perú.
