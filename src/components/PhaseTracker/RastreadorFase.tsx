@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { UserProfile, CasePhase, CaseLogItem } from '../../types';
-import { Check, ChevronDown, ChevronUp, Clock, FileText, Sparkles, AlertTriangle, ArrowRight, ShieldCheck, CheckCircle2, X } from 'lucide-react';
+import { Check, ChevronDown, ChevronUp, Clock, FileText, Sparkles, AlertTriangle, ArrowRight, ShieldCheck, CheckCircle2, Stethoscope, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { RegistroCitaModal, type ResultadoCita } from './RegistroCitaModal';
 import { FLUJOS } from '../../data/flujoCita';
@@ -20,9 +20,12 @@ export const RastreadorFase: React.FC<RastreadorFaseProps> = ({ user, onUpdateUs
   const [showConfirmAdvanceModal, setShowConfirmAdvanceModal] = useState(false);
   const [showRegistroCita, setShowRegistroCita] = useState(false);
 
-  // La fase 3 es la de "ya fui a mi cita": ahí no basta confirmar, hay que
-  // registrar a qué servicio fue, cómo se sintió y qué le dijeron.
+  // En la fase 3 registrar la cita ES la acción principal de la fase.
   const esRegistroDeCita = currentPhase === 3;
+
+  // Pero la ruta encadena varias citas y cada derivación sube de fase, así que
+  // el registro sigue disponible mientras el caso siga en atención (3 a 5).
+  const puedeRegistrarCita = currentPhase >= 3 && currentPhase <= 5;
 
   const registrarCita = ({ servicio, sentimiento, indicacion, subopcion }: ResultadoCita) => {
     if (!onUpdateUser) return;
@@ -471,25 +474,39 @@ export const RastreadorFase: React.FC<RastreadorFaseProps> = ({ user, onUpdateUs
           )}
         </div>
 
-        {/* Action Button to Advance Phase */}
-        {activePhaseInfo.advanceBtnText && (
-          <div className="shrink-0 self-start sm:self-center">
+        {/* Acciones de la fase actual.
+            "Ya fui a mi cita" NO puede depender de estar en la fase 3: la ruta
+            encadena varias citas (CRED → pediatría → neuropediatría →
+            psiquiatría) y la primera derivación ya deja el caso en fase 4. Si
+            el botón viviera solo en la fase 3, la cadena se cortaba tras el
+            primer registro y no había forma de llegar a las siguientes. */}
+        <div className="shrink-0 self-start sm:self-center flex flex-col sm:flex-row gap-2">
+          {puedeRegistrarCita && (
             <button
               type="button"
-              onClick={() =>
-                // "Ya fui a mi cita" abre el cuestionario de la cita; el resto
-                // de fases siguen con la confirmación simple.
+              onClick={() => setShowRegistroCita(true)}
+              className={`px-5 py-2.5 text-xs sm:text-sm font-bold rounded-xl transition-all shadow-xs cursor-pointer flex items-center gap-2 ${
                 esRegistroDeCita
-                  ? setShowRegistroCita(true)
-                  : setShowConfirmAdvanceModal(true)
-              }
+                  ? 'bg-[#4A2270] hover:bg-[#381559] text-white'
+                  : 'bg-white border border-[#4A2270] text-[#4A2270] hover:bg-[#FAF8FD]'
+              }`}
+            >
+              <Stethoscope className="w-4 h-4" />
+              <span>Ya fui a mi cita</span>
+            </button>
+          )}
+
+          {activePhaseInfo.advanceBtnText && !esRegistroDeCita && (
+            <button
+              type="button"
+              onClick={() => setShowConfirmAdvanceModal(true)}
               className="px-5 py-2.5 bg-[#4A2270] hover:bg-[#381559] text-white text-xs sm:text-sm font-bold rounded-xl transition-all shadow-xs cursor-pointer flex items-center gap-2"
             >
               <span>{activePhaseInfo.advanceBtnText}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       <RegistroCitaModal

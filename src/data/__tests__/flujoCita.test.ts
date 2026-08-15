@@ -54,6 +54,49 @@ describe('cadena de derivaciones de la demo', () => {
     expect(psiq?.destacada).toBe(true);
   });
 
+  /**
+   * Recorrido completo, tal como lo hace RastreadorFase.registrarCita.
+   *
+   * La regresión que cubre: el botón "Ya fui a mi cita" solo existía en la
+   * fase 3, y la primera derivación deja el caso en fase 4. La cadena se
+   * cortaba tras el primer registro y psiquiatría era inalcanzable.
+   */
+  it('las cuatro citas se pueden registrar seguidas', () => {
+    let derivaciones: ServicioCita[] = [];
+    let fase = 3;
+
+    const registrar = (servicio: ServicioCita, idPadre: string, idSub?: string) => {
+      // El servicio tiene que estar ofrecido en ese momento.
+      expect(serviciosDisponibles(derivaciones)).toContain(servicio);
+
+      const padre = FLUJOS[servicio].indicaciones.find((i) => i.id === idPadre)!;
+      const eleccion = idSub ? padre.subopciones!.find((s) => s.id === idSub)! : padre;
+
+      expect(eleccion.inactiva).toBeFalsy();
+
+      const derivaA = eleccion.derivaA || padre.derivaA;
+      if (derivaA) derivaciones = [...new Set([...derivaciones, derivaA])];
+      fase = Math.max(fase, eleccion.avanzaA || padre.avanzaA || fase);
+
+      // El botón de registrar cita sigue disponible entre las fases 3 y 5.
+      expect(fase >= 3 && fase <= 5).toBe(true);
+    };
+
+    registrar('cred', 'deriva-pediatria');
+    expect(fase).toBe(4);
+
+    registrar('pediatria', 'deriva-especialista', 'deriva-neuro');
+    expect(derivaciones).toContain('neuropediatria');
+
+    registrar('neuropediatria', 'confirman-tea', 'deriva-psiq');
+    expect(fase).toBe(5);
+    expect(derivaciones).toContain('psiquiatria');
+
+    // Y aquí es donde fallaba: psiquiatría tiene que estar ofrecida.
+    expect(serviciosDisponibles(derivaciones)).toContain('psiquiatria');
+    registrar('psiquiatria', 'confirman-tea');
+  });
+
   it('psiquiatría cierra la cadena y no deriva a nadie', () => {
     const derivaciones = FLUJOS.psiquiatria.indicaciones
       .flatMap((i) => [i, ...(i.subopciones || [])])
