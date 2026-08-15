@@ -24,29 +24,43 @@ export const RastreadorFase: React.FC<RastreadorFaseProps> = ({ user, onUpdateUs
   // registrar a qué servicio fue, cómo se sintió y qué le dijeron.
   const esRegistroDeCita = currentPhase === 3;
 
-  const registrarCita = ({ servicio, sentimiento, indicacion }: ResultadoCita) => {
+  const registrarCita = ({ servicio, sentimiento, indicacion, subopcion }: ResultadoCita) => {
     if (!onUpdateUser) return;
 
     const fecha = new Date().toLocaleDateString('es-PE', { day: 'numeric', month: 'short' });
     const flujo = FLUJOS[servicio];
 
+    // La sub-opción es la respuesta más precisa, así que manda sobre la
+    // indicación general para la derivación y el avance de fase.
+    const eleccion = subopcion || indicacion;
+    const etiqueta = subopcion
+      ? `${indicacion.etiqueta} — ${subopcion.etiqueta}`
+      : indicacion.etiqueta;
+    const avanzaA = eleccion.avanzaA || indicacion.avanzaA;
+
     const registro: CaseLogItem = {
       fecha,
-      titulo: `Cita en ${flujo.nombre}: ${indicacion.etiqueta}`,
-      detalle: `La familia se sintió ${sentimiento.etiqueta.toLowerCase()}. ${indicacion.siguientePaso}`,
+      titulo: `Cita en ${flujo.nombre}: ${etiqueta}`,
+      detalle: [
+        `La familia se sintió ${sentimiento.etiqueta.toLowerCase()}.`,
+        eleccion.siguientePaso,
+      ]
+        .filter(Boolean)
+        .join(' '),
       tipo: 'fase_update',
       origen: 'familia',
-      faseNum: (indicacion.avanzaA || currentPhase) as CasePhase,
+      faseNum: (avanzaA || currentPhase) as CasePhase,
     };
 
     // Una derivación habilita ese servicio para el próximo registro de cita.
-    const derivaciones = indicacion.derivaA
-      ? Array.from(new Set([...(user.derivaciones || []), indicacion.derivaA]))
+    const derivaA = eleccion.derivaA || indicacion.derivaA;
+    const derivaciones = derivaA
+      ? Array.from(new Set([...(user.derivaciones || []), derivaA]))
       : user.derivaciones;
 
     onUpdateUser({
       ...user,
-      fase: Math.max(user.fase || 3, indicacion.avanzaA || currentPhase) as CasePhase,
+      fase: Math.max(user.fase || 3, avanzaA || currentPhase) as CasePhase,
       derivaciones,
       registros: [...(user.registros || []), registro],
     });

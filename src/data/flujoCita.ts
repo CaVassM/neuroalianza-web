@@ -28,7 +28,22 @@ export interface OpcionIndicacion {
   /** Fase mínima a la que llega el caso al elegir esta opción. */
   avanzaA?: CasePhase;
   /** Qué hacer ahora, en una línea. */
-  siguientePaso: string;
+  siguientePaso?: string;
+  /**
+   * Abre un paso más para precisar la respuesta. Cuando existen, esta opción
+   * no cierra el registro por sí sola.
+   */
+  subopciones?: OpcionIndicacion[];
+  /**
+   * Camino que continúa la ruta. Se marca en la interfaz para que en la demo
+   * se vea cuál seguir sin tener que recordarlo.
+   */
+  destacada?: boolean;
+  /**
+   * Se muestra pero no se puede elegir. Existe para que la familia vea que la
+   * opción está contemplada, aunque su flujo todavía no esté escrito.
+   */
+  inactiva?: boolean;
 }
 
 export interface FlujoServicio {
@@ -143,16 +158,34 @@ export const FLUJOS: Record<ServicioCita, FlujoServicio> = {
         siguientePaso: 'Anota la fecha de control y llévala contigo en tu ruta.',
       },
       {
-        id: 'deriva-neuro',
-        etiqueta: 'Me derivaron a Neuropediatría',
-        derivaA: 'neuropediatria',
-        siguientePaso: 'Guarda la referencia y gestiona la cita con neuropediatría.',
-      },
-      {
-        id: 'deriva-psiq',
-        etiqueta: 'Me derivaron a Psiquiatría pediátrica',
-        derivaA: 'psiquiatria',
-        siguientePaso: 'Guarda la referencia y gestiona la cita con psiquiatría pediátrica.',
+        id: 'deriva-especialista',
+        etiqueta: 'Me derivaron a otro especialista',
+        destacada: true,
+        subopciones: [
+          {
+            id: 'deriva-cred',
+            etiqueta: 'CRED',
+            inactiva: true,
+          },
+          {
+            id: 'deriva-neuro',
+            etiqueta: 'Neuropediatría',
+            derivaA: 'neuropediatria',
+            destacada: true,
+            siguientePaso:
+              'Guarda la hoja de referencia y gestiona la cita con neuropediatría. Es tu siguiente paso en la ruta.',
+          },
+          {
+            id: 'deriva-psiq',
+            etiqueta: 'Psiquiatría pediátrica',
+            inactiva: true,
+          },
+          {
+            id: 'deriva-otro',
+            etiqueta: 'Otro',
+            inactiva: true,
+          },
+        ],
       },
       {
         id: 'otras-eval',
@@ -205,8 +238,23 @@ export const FLUJOS: Record<ServicioCita, FlujoServicio> = {
         id: 'confirman-tea',
         etiqueta: 'Confirmaron el diagnóstico de TEA',
         avanzaA: 5,
-        siguientePaso:
-          'Registra el diagnóstico en tu ruta: qué profesional lo emitió y en qué mes.',
+        destacada: true,
+        subopciones: [
+          {
+            id: 'tratamiento',
+            etiqueta: 'Me dieron tratamiento',
+            inactiva: true,
+          },
+          {
+            id: 'deriva-psiq',
+            etiqueta: 'Me derivaron a psiquiatría pediátrica',
+            derivaA: 'psiquiatria',
+            avanzaA: 5,
+            destacada: true,
+            siguientePaso:
+              'Registra el diagnóstico en tu ruta y gestiona la cita con psiquiatría pediátrica.',
+          },
+        ],
       },
       {
         id: 'no-confirman',
