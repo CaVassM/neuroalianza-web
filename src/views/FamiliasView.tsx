@@ -14,7 +14,7 @@ import {
 import { ChatComposer } from '../components/Familias/ChatComposer';
 import { DocumentDrawer } from '../components/Familias/DocumentDrawer';
 import { BibliotecaPreguntas } from '../components/Familias/BibliotecaPreguntas';
-import { consultar, type TurnoHistorial } from '../api/cliente';
+import { consultar, listarDocumentos, type TurnoHistorial } from '../api/cliente';
 import { 
   Puzzle, 
   Zap, 
@@ -74,6 +74,45 @@ export const FamiliasView: React.FC<FamiliasViewProps> = ({
 
   const childAgeInMonths = calculateAgeInMonths(user.child);
 
+  // Documentos que REALMENTE respaldan las respuestas. Antes se mostraba
+  // LIBRARY_DOCUMENTS, una lista escrita a mano que no tenía relación con el
+  // corpus indexado: el contador prometía una biblioteca que no era la que
+  // sustentaba lo que respondía el asistente.
+  const [docsCorpus, setDocsCorpus] = useState<CorpusDocument[] | null>(null);
+
+  useEffect(() => {
+    let vigente = true;
+    listarDocumentos()
+      .then(({ documentos }) => {
+        if (!vigente) return;
+        setDocsCorpus(
+          documentos.map((d) => ({
+            id: d.doc_id,
+            title: d.titulo,
+            institution: d.institucion,
+            description: `${d.fragmentos} fragmentos indexados · ${
+              d.condicion === 'autismo' ? 'específico de autismo' : 'común a todo el neurodesarrollo'
+            }${
+              d.edad_min_meses != null && d.edad_max_meses != null
+                ? ` · para ${d.edad_min_meses}–${d.edad_max_meses} meses`
+                : ''
+            }${d.fecha_verificacion ? ` · verificado el ${d.fecha_verificacion}` : ''}`,
+            url: d.url || '',
+            badge: d.ambito === 'peru' ? 'Perú' : 'Internacional',
+          }))
+        );
+      })
+      .catch(() => {
+        // Sin backend nos quedamos con la biblioteca local de respaldo.
+        if (vigente) setDocsCorpus(null);
+      });
+    return () => {
+      vigente = false;
+    };
+  }, []);
+
+  const documentos = docsCorpus ?? LIBRARY_DOCUMENTS;
+
   const [messages, setMessages] = useState<ChatMessageData[]>([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -94,7 +133,7 @@ export const FamiliasView: React.FC<FamiliasViewProps> = ({
 
   // Handle opening document details in lateral Drawer
   const handleOpenSource = (sourceTitle: string) => {
-    const matched = LIBRARY_DOCUMENTS.find(
+    const matched = documentos.find(
       (doc) =>
         sourceTitle.toLowerCase().includes(doc.badge.toLowerCase()) ||
         sourceTitle.toLowerCase().includes(doc.legalCode?.toLowerCase() || '') ||
@@ -397,7 +436,7 @@ export const FamiliasView: React.FC<FamiliasViewProps> = ({
             className="text-[#4A2270] font-semibold hover:underline flex items-center gap-1 cursor-pointer"
             title="Ver biblioteca de documentos"
           >
-            <span>{LIBRARY_DOCUMENTS.length} documentos</span>
+            <span>{documentos.length} documentos</span>
             <ExternalLink className="w-3 h-3 opacity-70" />
           </button>
         </div>
@@ -463,7 +502,7 @@ export const FamiliasView: React.FC<FamiliasViewProps> = ({
               className="text-xs font-semibold text-[#6B3FA0] hover:text-[#4A2270] hover:underline flex items-center gap-1 cursor-pointer"
             >
               <BookOpen className="w-3.5 h-3.5" />
-              <span>Ver biblioteca ({LIBRARY_DOCUMENTS.length})</span>
+              <span>Ver biblioteca ({documentos.length})</span>
             </button>
           </div>
 
@@ -569,7 +608,7 @@ export const FamiliasView: React.FC<FamiliasViewProps> = ({
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
         selectedDoc={selectedDoc}
-        allDocs={LIBRARY_DOCUMENTS}
+        allDocs={documentos}
         onSelectDoc={(doc) => setSelectedDoc(doc)}
       />
 

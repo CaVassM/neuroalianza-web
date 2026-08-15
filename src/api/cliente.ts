@@ -215,6 +215,36 @@ export function estadoLimites(): Promise<EstadoLimites> {
   return pedir<EstadoLimites>('/seguimiento/limites/estado');
 }
 
+/* ------------------------------------------------------------------ *
+ * Inventario del corpus
+ * ------------------------------------------------------------------ */
+
+export interface DocumentoCorpus {
+  doc_id: string;
+  titulo: string;
+  institucion: string;
+  ambito: Ambito;
+  idioma: string;
+  condicion: string;
+  url: string | null;
+  fecha_verificacion: string | null;
+  edad_min_meses: number | null;
+  edad_max_meses: number | null;
+  /** Cuántos fragmentos aporta este documento al índice. */
+  fragmentos: number;
+}
+
+export interface InventarioCorpus {
+  total: number;
+  fragmentos: number;
+  documentos: DocumentoCorpus[];
+}
+
+/** Los documentos que de verdad respaldan las respuestas del asistente. */
+export function listarDocumentos(): Promise<InventarioCorpus> {
+  return pedir<InventarioCorpus>('/documentos');
+}
+
 export function validarNumero(
   numero: string
 ): Promise<{ valido: boolean; normalizado: string | null }> {

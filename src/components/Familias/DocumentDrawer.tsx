@@ -30,6 +30,11 @@ export const DocumentDrawer: React.FC<DocumentDrawerProps> = ({
         return 'bg-[#F3EDF9] text-[#6B3FA0] border-[#E1D4F0]';
       case 'OMS':
         return 'bg-[#EBF3FC] text-[#2563EB] border-[#BFDBFE]';
+      // Distintivos del corpus real, por ámbito.
+      case 'Perú':
+        return 'bg-[#E9DFF5] text-[#4A2270] border-[#D5C6EB]';
+      case 'Internacional':
+        return 'bg-[#F0EDF5] text-[#6E6A75] border-[#E5E1EC]';
       default:
         return 'bg-[#F7F5FA] text-[#6E6A75] border-[#E5E1EC]';
     }

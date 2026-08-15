@@ -5,7 +5,13 @@ export interface CorpusDocument {
   description: string;
   legalCode?: string;
   url: string;
-  badge: 'MINSA' | 'CONADIS' | 'MINEDU' | 'DEFENSORÍA' | 'OMS';
+  /**
+   * Etiqueta corta de procedencia. Era una unión cerrada de entidades
+   * peruanas; se abrió a string porque la biblioteca ahora muestra el corpus
+   * real, cuyas instituciones (Autism Speaks, CDC, ECHO Autism…) no estaban
+   * contempladas.
+   */
+  badge: string;
 }
 
 export interface FAQItem {
