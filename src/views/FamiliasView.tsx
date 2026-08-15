@@ -24,7 +24,8 @@ import {
   Info,
   ExternalLink,
   ArrowRight,
-  Sparkles
+  Sparkles,
+  FlaskConical
 } from 'lucide-react';
 
 interface FamiliasViewProps {
@@ -40,7 +41,16 @@ export const FamiliasView: React.FC<FamiliasViewProps> = ({
   onUpdateUser,
 }) => {
   const childName = user.child.nickname || 'tu hijo/a';
-  const hasDiagnosis = Boolean(user.diagnosis || (user.fase && user.fase >= 5));
+  const faseActual = user.fase || 1;
+
+  // El asistente se desbloquea con un diagnóstico registrado, que en la ruta
+  // real ocurre al volver de la cita (fase 5).
+  const hasDiagnosis = Boolean(user.diagnosis || faseActual >= 5);
+
+  // Interruptor solo para enseñar la interfaz. No se persiste: se apaga al
+  // recargar, para que nadie acabe demostrando con él sin darse cuenta.
+  const [modoDemo, setModoDemo] = useState(false);
+  const chatHabilitado = hasDiagnosis || modoDemo;
 
   // Condition context state
   const [activeCondicionKey, setActiveCondicionKey] = useState<string>('autismo');
@@ -171,35 +181,17 @@ export const FamiliasView: React.FC<FamiliasViewProps> = ({
     );
   };
 
-  // Phase toggler for demo
-  const handleTogglePhase = () => {
-    if (!onUpdateUser) return;
-    if (hasDiagnosis) {
-      onUpdateUser({
-        ...user,
-        fase: 1,
-        diagnosis: null,
-      });
-    } else {
-      onUpdateUser({
-        ...user,
-        fase: 5,
-        diagnosis: {
-          profesional: 'neurologo',
-          mes: 'Enero',
-          ano: '2025',
-          registradoAt: new Date().toISOString(),
-        },
-      });
-    }
-  };
+  // Aquí vivía handleTogglePhase: saltaba el caso a fase 5 inventándole un
+  // diagnóstico con neurólogo y fecha para desbloquear el chat, y lo guardaba
+  // como si fuera real. Lo sustituye `modoDemo`, que desbloquea la interfaz sin
+  // escribir nada en el caso.
 
   // Core Send Query Routine with mutex to prevent double dispatch
   const handleSend = async (queryOverride?: string) => {
     if (isSendingRef.current) return;
 
     const textToQuery = (queryOverride || inputText).trim();
-    if (!textToQuery || !hasDiagnosis) return;
+    if (!textToQuery || !chatHabilitado) return;
 
     isSendingRef.current = true;
     setInputText('');
@@ -348,7 +340,10 @@ export const FamiliasView: React.FC<FamiliasViewProps> = ({
           </p>
         </div>
 
-        {/* Phase Pill and Demo Toggle */}
+        {/* Fase real del caso + interruptor de modo demo.
+            Antes había un "Cambiar fase" que alteraba el caso de verdad: le
+            inventaba un diagnóstico con neurólogo y fecha para desbloquear el
+            chat. El modo demo desbloquea la interfaz SIN tocar los datos. */}
         <div className="flex items-center gap-2 self-start sm:self-auto bg-white px-3 py-1.5 rounded-xl border border-[#E5E1EC] shadow-2xs">
           <span
             className={`px-2.5 py-1 rounded-full text-xs font-bold ${
@@ -357,19 +352,52 @@ export const FamiliasView: React.FC<FamiliasViewProps> = ({
                 : 'bg-[#FDF1DF] text-[#C77700]'
             }`}
           >
-            {hasDiagnosis ? 'Fase 5 · Con Diagnóstico' : 'Fases 1–4 · Orientación'}
+            Fase {faseActual}
+            {hasDiagnosis ? ' · Con diagnóstico' : ' · Orientación'}
           </span>
 
           <button
             type="button"
-            onClick={handleTogglePhase}
-            className="text-xs font-semibold text-[#6B3FA0] hover:text-[#4A2270] hover:underline cursor-pointer px-1.5 py-0.5"
-            title="Cambiar entre modo con diagnóstico y modo de orientación inicial"
+            role="switch"
+            aria-checked={modoDemo}
+            onClick={() => setModoDemo(!modoDemo)}
+            className="flex items-center gap-1.5 px-1.5 py-0.5 cursor-pointer group"
+            title="Habilita el asistente sin diagnóstico registrado, solo para probar la interfaz"
           >
-            Cambiar fase
+            <span
+              className={`relative w-7 h-4 rounded-full transition-colors ${
+                modoDemo ? 'bg-[#6B3FA0]' : 'bg-[#D5CCE0]'
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${
+                  modoDemo ? 'left-3.5' : 'left-0.5'
+                }`}
+              />
+            </span>
+            <span
+              className={`text-xs font-semibold transition-colors ${
+                modoDemo ? 'text-[#4A2270]' : 'text-[#8E8A95] group-hover:text-[#6B3FA0]'
+              }`}
+            >
+              Modo demo
+            </span>
           </button>
         </div>
       </div>
+
+      {/* Aviso permanente mientras el modo demo esté activo: nadie debe
+          confundir una prueba de interfaz con el estado real del caso. */}
+      {modoDemo && !hasDiagnosis && (
+        <div className="bg-[#FDF1DF] border border-[#FBE0B8] rounded-xl px-4 py-2.5 flex items-start gap-2.5">
+          <FlaskConical className="w-4 h-4 text-[#C77700] shrink-0 mt-0.5" />
+          <p className="text-[12.5px] text-[#9E5D00] leading-relaxed">
+            <strong className="font-semibold">Modo demo activo.</strong> El asistente está
+            habilitado para probar la interfaz, pero este caso todavía no tiene un
+            diagnóstico registrado. En uso real se desbloquea al anotarlo tras la cita.
+          </p>
+        </div>
+      )}
 
       {/* 2. CONTEXT BAR (LAVANDA CLARO INTEGRADO) */}
       <div className="bg-[#F4EFFB] border border-[#D5CCE0] rounded-2xl p-3.5 sm:px-5 sm:py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
@@ -456,7 +484,7 @@ export const FamiliasView: React.FC<FamiliasViewProps> = ({
       </div>
 
       {/* 4. MAIN INTERACTIVE CARD */}
-      {!hasDiagnosis ? (
+      {!chatHabilitado ? (
         /* LOCKED STATE: Clean informative card */
         <div className="bg-white border border-[#E5E1EC] rounded-2xl p-8 sm:p-12 text-center space-y-5 shadow-xs animate-in fade-in duration-300">
           <div className="w-14 h-14 rounded-2xl bg-[#F4EFFB] text-[#4A2270] flex items-center justify-center mx-auto shadow-2xs">
@@ -590,7 +618,7 @@ export const FamiliasView: React.FC<FamiliasViewProps> = ({
           Va aquí y no en otra pestaña porque cada pregunta se responde en este
           mismo chat: separarla obligaría a la familia a saltar de sitio para
           obtener la respuesta. Solo se muestra con el asistente habilitado. */}
-      {hasDiagnosis && (
+      {chatHabilitado && (
         <div className="bg-white border border-[#E5E1EC] rounded-2xl p-5 sm:p-6 shadow-xs">
           <BibliotecaPreguntas
             fase={user.fase || 1}

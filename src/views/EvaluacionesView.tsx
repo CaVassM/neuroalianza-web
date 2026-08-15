@@ -60,6 +60,38 @@ export const EvaluacionesView: React.FC<EvaluacionesViewProps> = ({
         </p>
       </div>
 
+      {/* Estado del tamizaje dentro de la ruta.
+          Un caso recién creado llegaba aquí sin que nada dijera que el tamizaje
+          estaba pendiente ni qué desbloqueaba: solo se veía un botón. */}
+      {!hasExistingTamizaje ? (
+        <div className="bg-[#FDF1DF] border border-[#FBE0B8] rounded-xl p-4 flex gap-3 items-start">
+          <Clock className="w-5 h-5 text-[#C77700] shrink-0 mt-0.5" />
+          <div className="space-y-0.5">
+            <p className="text-[15px] text-[#C77700] font-bold leading-relaxed">
+              Aún no has realizado el tamizaje
+            </p>
+            <p className="text-[13.5px] text-[#9E5D00] leading-relaxed">
+              Es tu siguiente paso en la ruta. Al completarlo pasarás a la{' '}
+              <strong>fase 3, buscar atención</strong>, y podrás ver dónde acudir según
+              tu distrito y tu seguro.
+            </p>
+          </div>
+        </div>
+      ) : (
+        <div className="bg-[#E6F2EC] border border-[#A8D5BE] rounded-xl p-4 flex gap-3 items-start">
+          <CheckCircle2 className="w-5 h-5 text-[#2E7D5B] shrink-0 mt-0.5" />
+          <div className="space-y-0.5">
+            <p className="text-[15px] text-[#2E7D5B] font-bold leading-relaxed">
+              Tamizaje completado
+            </p>
+            <p className="text-[13.5px] text-[#2E7D5B]/85 leading-relaxed">
+              Tu caso está en la <strong>fase {user.fase || 3}</strong> de la ruta. Puedes
+              repetirlo si cambió algo en el desarrollo de {childName}.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Info Banner */}
       <div className="bg-[#E9DFF5] border border-[#D5CCE0] rounded-xl p-4 flex gap-3 items-start">
         <Info className="w-5 h-5 text-[#4A2270] shrink-0 mt-0.5" />
