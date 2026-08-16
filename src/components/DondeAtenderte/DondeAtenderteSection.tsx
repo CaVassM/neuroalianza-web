@@ -1,7 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { UserProfile, Establecimiento, InsuranceType } from '../../types';
 import rawEstablecimientos from '../../data/establecimientos.json';
-import { haversineKm, getDistrictCoordinates, formatDistancia } from '../../utils/distancia';
+import {
+  haversineKm,
+  getDistrictCoordinates,
+  formatDistancia,
+  centroCobertura,
+} from '../../utils/distancia';
 import {
   calcularTerritorio,
   establecimientoDeZona,
@@ -53,17 +58,33 @@ type MobileSheetPosition = 'collapsed' | 'medium' | 'expanded';
 const MAXIMO_EN_MAPA = 120;
 const MAXIMO_EN_LISTA = 25;
 
+/**
+ * Hasta dónde llega "cerca de ti".
+ *
+ * Sin este tope, "opciones cercanas" listaba los 448 establecimientos SIS de
+ * Lima y Callao: la mitad a veinte kilómetros y en otro distrito. Cinco
+ * kilómetros es lo que una familia recorre para un control, en transporte
+ * público y con un niño pequeño.
+ */
+const RADIO_CERCANIA_KM = 5;
+
+/** Cuando a esa distancia no hay nada, la familia puede pedir mirar más lejos. */
+const RADIO_AMPLIADO_KM = 15;
+
 export const DondeAtenderteSection: React.FC<DondeAtenderteSectionProps> = ({
   user,
   onUpdateUser,
   activeBarrierFilter,
   onClearBarrierFilter,
 }) => {
-  // Sin distrito registrado el mapa necesita igualmente un centro desde el que
-  // partir; se usa Lima Cercado, y la interfaz avisa de que falta el dato en
-  // vez de presentar los establecimientos como si fueran los del barrio.
-  const district = user.location.district || 'Lima (Cercado)';
-  const defaultDistrictCoords = getDistrictCoordinates(district);
+  // El distrito registrado manda. Si no se reconoce —una familia de provincia,
+  // o sin distrito— el mapa se sitúa en el centro de la zona cubierta y se
+  // avisa, en vez de enseñar un barrio ajeno como si fuera el suyo.
+  const district = user.location.district || '';
+  const coordsDistrito = getDistrictCoordinates(district);
+  const distritoReconocido = coordsDistrito !== null;
+  const defaultDistrictCoords = coordsDistrito ?? centroCobertura();
+  const etiquetaOrigen = distritoReconocido ? district : 'Lima y Callao';
 
   // User location state
   const [userLocation, setUserLocation] = useState<{
@@ -106,6 +127,7 @@ export const DondeAtenderteSection: React.FC<DondeAtenderteSectionProps> = ({
   const [nivelFilter, setNivelFilter] = useState<NivelFilter>('TODOS');
   const [mobileSheetPos, setMobileSheetPos] = useState<MobileSheetPosition>('medium');
 
+  const [radioAmpliado, setRadioAmpliado] = useState(false);
   const [mostrarTerritorios, setMostrarTerritorios] = useState(true);
   // La explicación del mapa arranca plegada: es de una sola lectura y ocupaba
   // más alto que el propio mapa.
@@ -193,18 +215,28 @@ export const DondeAtenderteSection: React.FC<DondeAtenderteSectionProps> = ({
     return validData.sort((a, b) => (a.distanciaKm || 0) - (b.distanciaKm || 0));
   }, [userLocation.lat, userLocation.lng]);
 
+  /**
+   * Hasta dónde buscar.
+   *
+   * Por defecto el radio de cercanía. Las barreras lo mueven: "no había cupos"
+   * obliga a mirar más lejos, y "queda muy lejos" a mirar más cerca.
+   */
+  const radioBusquedaKm =
+    activeBarrierFilter === 'sin_cupos'
+      ? 10
+      : activeBarrierFilter === 'muy_lejos'
+      ? 2
+      : radioAmpliado
+      ? RADIO_AMPLIADO_KM
+      : RADIO_CERCANIA_KM;
+
   // Apply UI filters
   const filteredEstablecimientos = useMemo(() => {
     return processedEstablecimientos.filter((item) => {
+      if ((item.distanciaKm ?? Infinity) > radioBusquedaKm) return false;
+
       if (activeBarrierFilter === 'sin_cupos') {
         if (chosenEstablecimientoCodigo && item.codigo === chosenEstablecimientoCodigo) {
-          return false;
-        }
-        if ((item.distanciaKm || 0) > 10) {
-          return false;
-        }
-      } else if (activeBarrierFilter === 'muy_lejos') {
-        if ((item.distanciaKm || 0) > 2) {
           return false;
         }
       } else if (activeBarrierFilter === 'costo') {
@@ -229,33 +261,14 @@ export const DondeAtenderteSection: React.FC<DondeAtenderteSectionProps> = ({
 
       return true;
     });
-  }, [processedEstablecimientos, coberturaFilter, nivelFilter, activeBarrierFilter, chosenEstablecimientoCodigo]);
-
-  // La lista llega ordenada por distancia, así que recortar por el principio
-  // es quedarse con lo más cercano.
-  const establecimientosEnMapa = useMemo(
-    () => filteredEstablecimientos.slice(0, MAXIMO_EN_MAPA),
-    [filteredEstablecimientos]
-  );
-  const establecimientosEnLista = useMemo(
-    () => filteredEstablecimientos.slice(0, MAXIMO_EN_LISTA),
-    [filteredEstablecimientos]
-  );
-  const hayMasQueMostrar = filteredEstablecimientos.length > MAXIMO_EN_LISTA;
-
-  /**
-   * El más cercano de los que quedan tras los filtros.
-   *
-   * La lista sale ordenada por distancia, pero eso hay que deducirlo. Marcar
-   * uno como sugerido le da a la familia una respuesta a "¿y a cuál voy?" sin
-   * tener que comparar seis fichas.
-   */
-  const sugeridoPorCercania = useMemo(() => {
-    if (filteredEstablecimientos.length === 0) return null;
-    return filteredEstablecimientos.reduce((masCerca, item) =>
-      (item.distanciaKm ?? Infinity) < (masCerca.distanciaKm ?? Infinity) ? item : masCerca
-    );
-  }, [filteredEstablecimientos]);
+  }, [
+    processedEstablecimientos,
+    coberturaFilter,
+    nivelFilter,
+    activeBarrierFilter,
+    chosenEstablecimientoCodigo,
+    radioBusquedaKm,
+  ]);
 
   /**
    * Zonas de atención aproximadas.
@@ -268,29 +281,78 @@ export const DondeAtenderteSection: React.FC<DondeAtenderteSectionProps> = ({
    * establecimiento que tenga el cursor encima, mientras dure el hover. Con 650
    * establecimientos cargados, pintarlas todas dejaba el mapa ilegible.
    */
+  /**
+   * Sobre qué establecimientos se reparte el territorio.
+   *
+   * No sobre todos: cada sistema sectoriza el suyo. A una familia con SIS no le
+   * sirve saber que el policlínico de EsSalud de su esquina es el más cercano,
+   * porque no la va a atender, y en Breña ese policlínico era justo el primer
+   * nivel más próximo. El reparto sigue al seguro de la familia, no al filtro
+   * que esté mirando en ese momento.
+   *
+   * Las clínicas privadas no tienen sector asignado: se va a la que uno elija.
+   */
+  const poolZonas = useMemo(() => {
+    const cobertura = mapInsuranceToCobertura(user.insurance);
+    if (cobertura === 'Privado') return [];
+    // Sin seguro declarado, la referencia es el sistema público: la afiliación
+    // al SIS es gratuita y es la puerta de entrada que propone la ruta.
+    const objetivo = cobertura === 'TODOS' ? 'SIS' : cobertura;
+    return processedEstablecimientos.filter((e) => e.cobertura === objetivo);
+  }, [processedEstablecimientos, user.insurance]);
+
   const establecimientoPropio = useMemo(
-    () => establecimientoDeZona([userLocation.lat, userLocation.lng], processedEstablecimientos),
-    [userLocation.lat, userLocation.lng, processedEstablecimientos]
+    () => establecimientoDeZona([userLocation.lat, userLocation.lng], poolZonas),
+    [userLocation.lat, userLocation.lng, poolZonas]
   );
 
   const zonaPropia = useMemo(
-    () =>
-      establecimientoPropio
-        ? calcularTerritorio(establecimientoPropio, processedEstablecimientos)
-        : null,
-    [establecimientoPropio, processedEstablecimientos]
+    () => (establecimientoPropio ? calcularTerritorio(establecimientoPropio, poolZonas) : null),
+    [establecimientoPropio, poolZonas]
   );
 
   const zonaResaltada = useMemo(() => {
     if (!hoveredCodigo) return null;
-    const item = processedEstablecimientos.find((e) => e.codigo === hoveredCodigo);
+    const item = poolZonas.find((e) => e.codigo === hoveredCodigo);
     // Los hospitales no tienen sector: se llega por referencia, no por dirección.
     if (!item || !esPrimerNivel(item)) return null;
-    return calcularTerritorio(item, processedEstablecimientos);
-  }, [hoveredCodigo, processedEstablecimientos]);
+    return calcularTerritorio(item, poolZonas);
+  }, [hoveredCodigo, poolZonas]);
 
   const resaltadaEsAjena =
     !!zonaResaltada && zonaResaltada.codigo !== establecimientoPropio?.codigo;
+
+  /**
+   * Orden de las opciones: primero el que te toca, luego por distancia.
+   *
+   * Que un establecimiento cubra tu dirección pesa más que estar cien metros
+   * más cerca: es el que te va a atender sin discutir la referencia. Solo sube
+   * si sobrevive a los filtros que la familia haya marcado.
+   */
+  const opcionesOrdenadas = useMemo(() => {
+    if (!establecimientoPropio) return filteredEstablecimientos;
+    const propio = filteredEstablecimientos.find(
+      (e) => e.codigo === establecimientoPropio.codigo
+    );
+    if (!propio) return filteredEstablecimientos;
+    return [propio, ...filteredEstablecimientos.filter((e) => e.codigo !== propio.codigo)];
+  }, [filteredEstablecimientos, establecimientoPropio]);
+
+  /** El que se propone mientras la familia no haya elegido. */
+  const sugeridoPorCercania = opcionesOrdenadas[0] ?? null;
+  const sugeridoEsDeTuZona = sugeridoPorCercania?.codigo === establecimientoPropio?.codigo;
+
+  // Las listas ya vienen ordenadas, así que recortar por el principio es
+  // quedarse con lo más relevante.
+  const establecimientosEnMapa = useMemo(
+    () => opcionesOrdenadas.slice(0, MAXIMO_EN_MAPA),
+    [opcionesOrdenadas]
+  );
+  const establecimientosEnLista = useMemo(
+    () => opcionesOrdenadas.slice(0, MAXIMO_EN_LISTA),
+    [opcionesOrdenadas]
+  );
+  const hayMasQueMostrar = opcionesOrdenadas.length > MAXIMO_EN_LISTA;
 
   const handleOpenFicha = (item: Establecimiento) => {
     setFichaItem(item);
@@ -315,6 +377,8 @@ export const DondeAtenderteSection: React.FC<DondeAtenderteSectionProps> = ({
         ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }, 320);
   };
+
+  const hayFiltrosActivos = coberturaFilter !== 'TODOS' || nivelFilter !== 'TODOS';
 
   const handleClearFilters = () => {
     setCoberturaFilter('TODOS');
@@ -352,7 +416,7 @@ export const DondeAtenderteSection: React.FC<DondeAtenderteSectionProps> = ({
             <span>Mapeo georreferenciado</span>
           </div>
           <h2 className="text-2xl sm:text-3xl font-fraunces font-bold text-[#2E2A33]">
-            Dónde atenderte en {district}
+            Dónde atenderte en {etiquetaOrigen}
           </h2>
           <p className="text-sm text-[#6E6A75] mt-1 max-w-2xl">
             Explora los puestos de salud, policlínicos y hospitales cercanos con capacidad para evaluación infantil y tamizajes.
@@ -366,7 +430,7 @@ export const DondeAtenderteSection: React.FC<DondeAtenderteSectionProps> = ({
             <span className="text-xs font-medium text-[#4A4652]">
               {userLocation.isBrowserLocation
                 ? 'Distancias desde tu ubicación actual'
-                : `Distancias desde el centro de ${district}`}
+                : `Distancias desde el centro de ${etiquetaOrigen}`}
             </span>
           </div>
           {!userLocation.isBrowserLocation && (
@@ -383,8 +447,29 @@ export const DondeAtenderteSection: React.FC<DondeAtenderteSectionProps> = ({
         </div>
       </div>
 
-      {/* Sugerencia por cercanía, mientras la familia no haya elegido.
-          Sin esto la sección abre con seis fichas y ninguna respuesta a la
+      {/* Distrito que no está en el padrón cargado.
+          Antes esto no se avisaba: se caía a Miraflores en silencio y la
+          familia veía un mapa perfectamente creíble de un barrio ajeno. */}
+      {!distritoReconocido && (
+        <div className="bg-[#FDF1DF] border border-[#F6DCB6] rounded-2xl p-4 flex items-start gap-3 text-xs text-[#C77700]">
+          <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+          <p className="leading-relaxed">
+            {district ? (
+              <>
+                No tenemos establecimientos cargados en{' '}
+                <strong className="text-[#2E2A33]">{district}</strong>. Este prototipo cubre
+                Lima Metropolitana y Callao.
+              </>
+            ) : (
+              <>Aún no registraste tu distrito, así que no podemos medir distancias desde tu barrio.</>
+            )}{' '}
+            Puedes usar tu ubicación actual para ordenar lo que sí tenemos.
+          </p>
+        </div>
+      )}
+
+      {/* Sugerencia mientras la familia no haya elegido.
+          Sin esto la sección abre con una lista y ninguna respuesta a la
           pregunta que trae: "¿y a cuál voy?". */}
       {!chosenEstablecimiento && sugeridoPorCercania && (
         <div className="bg-[#FAF8FD] border border-[#D5C6EB] rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -394,7 +479,7 @@ export const DondeAtenderteSection: React.FC<DondeAtenderteSectionProps> = ({
             </div>
             <div>
               <span className="text-[11px] font-bold tracking-wider text-[#4A2270] uppercase">
-                El más cercano a ti
+                {sugeridoEsDeTuZona ? 'El que te correspondería' : 'El más cercano a ti'}
               </span>
               <h3 className="text-[16px] font-bold text-[#2E2A33]">
                 {sugeridoPorCercania.nombre}
@@ -406,8 +491,13 @@ export const DondeAtenderteSection: React.FC<DondeAtenderteSectionProps> = ({
                 )}
                 {' '}· {userLocation.isBrowserLocation
                   ? 'desde tu ubicación actual'
-                  : `desde ${district}`}
+                  : `desde ${etiquetaOrigen}`}
               </p>
+              {sugeridoEsDeTuZona && (
+                <p className="text-[11.5px] text-[#2E7D5B] mt-1">
+                  Tu ubicación cae dentro de su zona de atención estimada.
+                </p>
+              )}
             </div>
           </div>
 
@@ -734,13 +824,20 @@ export const DondeAtenderteSection: React.FC<DondeAtenderteSectionProps> = ({
                   </div>
                 </div>
 
-                {filteredEstablecimientos.length > MAXIMO_EN_MAPA && (
-                  <p className="text-[11px] text-[#8A8594] leading-relaxed">
-                    El mapa dibuja los {MAXIMO_EN_MAPA} más cercanos de{' '}
-                    {filteredEstablecimientos.length} en Lima y Callao. Cambia de distrito o
-                    usa tu ubicación para mirar otra zona.
-                  </p>
-                )}
+                <p className="text-[11px] text-[#8A8594] leading-relaxed">
+                  {opcionesOrdenadas.length > MAXIMO_EN_MAPA ? (
+                    <>
+                      El mapa dibuja los {MAXIMO_EN_MAPA} más cercanos de{' '}
+                      {opcionesOrdenadas.length} que hay a menos de {radioBusquedaKm} km.
+                    </>
+                  ) : (
+                    <>
+                      El mapa muestra los establecimientos a menos de {radioBusquedaKm} km de{' '}
+                      {userLocation.isBrowserLocation ? 'tu ubicación' : etiquetaOrigen}.
+                    </>
+                  )}{' '}
+                  Cambia de distrito o usa tu ubicación para mirar otra zona.
+                </p>
               </div>
             )}
           </div>
@@ -750,10 +847,10 @@ export const DondeAtenderteSection: React.FC<DondeAtenderteSectionProps> = ({
         <div className="hidden lg:block w-full space-y-3">
           <div className="px-1">
             <h3 className="text-lg font-bold text-[#2E2A33]">
-              Opciones cercanas a ti ({filteredEstablecimientos.length})
+              Opciones a menos de {radioBusquedaKm} km ({opcionesOrdenadas.length})
             </h3>
             <p className="text-xs text-[#6E6A75] mt-0.5">
-              {district} · {coverageDisplayLabel} ·{' '}
+              {etiquetaOrigen} · {coverageDisplayLabel} ·{' '}
               {hayMasQueMostrar
                 ? `las ${MAXIMO_EN_LISTA} más cercanas`
                 : 'ordenadas por cercanía'}
@@ -782,7 +879,7 @@ export const DondeAtenderteSection: React.FC<DondeAtenderteSectionProps> = ({
           )}
 
           <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1.5 custom-scrollbar">
-            {filteredEstablecimientos.length > 0 ? (
+            {opcionesOrdenadas.length > 0 ? (
               establecimientosEnLista.map((item) => (
                 <EstablishmentCard
                   key={item.codigo}
@@ -822,27 +919,44 @@ export const DondeAtenderteSection: React.FC<DondeAtenderteSectionProps> = ({
                 )}
               </div>
             ) : (
-              /* Filter Empty State with 'Quitar filtros' button */
+              /* Vacío: puede ser por el radio o por los filtros, y la salida
+                 no es la misma. Se ofrecen las dos. */
               <div className="p-8 rounded-2xl bg-white border border-[#E5E1EC] text-center space-y-4">
                 <div className="w-12 h-12 rounded-full bg-[#F7F5FA] text-[#6E6A75] flex items-center justify-center mx-auto">
                   <Building2 className="w-6 h-6" />
                 </div>
                 <div className="space-y-1">
                   <h4 className="font-bold text-[15px] text-[#2E2A33]">
-                    No encontramos opciones con esos filtros
+                    Nada a menos de {radioBusquedaKm} km
                   </h4>
                   <p className="text-xs text-[#6E6A75] leading-relaxed max-w-xs mx-auto">
-                    Prueba cambiando o quitando los filtros de seguro o nivel de atención.
+                    {hayFiltrosActivos
+                      ? 'Prueba ampliando la búsqueda o quitando los filtros de seguro y nivel.'
+                      : 'Puedes ampliar la búsqueda para ver lo que hay más lejos.'}
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleClearFilters}
-                  className="px-4 py-2 bg-[#4A2270] hover:bg-[#381559] text-white text-xs font-bold rounded-xl transition-all inline-flex items-center gap-1.5 shadow-xs cursor-pointer"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                  <span>Quitar filtros</span>
-                </button>
+                <div className="flex items-center justify-center gap-2 flex-wrap">
+                  {!radioAmpliado && (
+                    <button
+                      type="button"
+                      onClick={() => setRadioAmpliado(true)}
+                      className="px-4 py-2 bg-[#4A2270] hover:bg-[#381559] text-white text-xs font-bold rounded-xl transition-all inline-flex items-center gap-1.5 shadow-xs cursor-pointer"
+                    >
+                      <Compass className="w-3.5 h-3.5" />
+                      <span>Buscar hasta {RADIO_AMPLIADO_KM} km</span>
+                    </button>
+                  )}
+                  {hayFiltrosActivos && (
+                    <button
+                      type="button"
+                      onClick={handleClearFilters}
+                      className="px-4 py-2 bg-white hover:bg-[#FAF8FD] border border-[#E5E1EC] text-[#4A2270] text-xs font-bold rounded-xl transition-all inline-flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span>Quitar filtros</span>
+                    </button>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -876,7 +990,8 @@ export const DondeAtenderteSection: React.FC<DondeAtenderteSectionProps> = ({
             <div className="flex items-center justify-between gap-2">
               <div>
                 <span className="text-xs font-bold text-[#4A2270]">
-                  {filteredEstablecimientos.length} establecimientos cerca de {district}
+                  {opcionesOrdenadas.length} a menos de {radioBusquedaKm} km de{' '}
+                  {userLocation.isBrowserLocation ? 'ti' : etiquetaOrigen}
                 </span>
                 <p className="text-[11px] text-[#6E6A75]">
                   {mobileSheetPos === 'collapsed'
@@ -936,7 +1051,7 @@ export const DondeAtenderteSection: React.FC<DondeAtenderteSectionProps> = ({
 
           {mobileSheetPos !== 'collapsed' && (
             <div className="p-4 space-y-3 flex-1 overflow-y-auto custom-scrollbar">
-              {filteredEstablecimientos.length > 0 ? (
+              {opcionesOrdenadas.length > 0 ? (
                 establecimientosEnLista.map((item) => (
                   <EstablishmentCard
                     key={item.codigo}
@@ -954,15 +1069,28 @@ export const DondeAtenderteSection: React.FC<DondeAtenderteSectionProps> = ({
               ) : (
                 <div className="p-6 rounded-2xl bg-[#FAF8FD] border border-[#E5E1EC] text-center space-y-3">
                   <p className="text-xs text-[#6E6A75]">
-                    No encontramos opciones con los filtros seleccionados.
+                    No hay establecimientos a menos de {radioBusquedaKm} km.
                   </p>
-                  <button
-                    type="button"
-                    onClick={handleClearFilters}
-                    className="px-3.5 py-1.5 bg-[#4A2270] text-white text-xs font-bold rounded-xl"
-                  >
-                    Quitar filtros
-                  </button>
+                  <div className="flex items-center justify-center gap-2 flex-wrap">
+                    {!radioAmpliado && (
+                      <button
+                        type="button"
+                        onClick={() => setRadioAmpliado(true)}
+                        className="px-3.5 py-1.5 bg-[#4A2270] text-white text-xs font-bold rounded-xl"
+                      >
+                        Buscar hasta {RADIO_AMPLIADO_KM} km
+                      </button>
+                    )}
+                    {hayFiltrosActivos && (
+                      <button
+                        type="button"
+                        onClick={handleClearFilters}
+                        className="px-3.5 py-1.5 bg-white border border-[#E5E1EC] text-[#4A2270] text-xs font-bold rounded-xl"
+                      >
+                        Quitar filtros
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
             </div>

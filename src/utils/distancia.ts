@@ -1,3 +1,5 @@
+import rawEstablecimientos from '../data/establecimientos.json';
+
 /**
  * Haversine formula for distance in kilometers
  */
@@ -25,35 +27,101 @@ export function formatDistancia(km: number): string {
   return `${km.toFixed(1)} km`;
 }
 
+/** Para que "Breña", "BREÑA" y "Brena" busquen lo mismo. */
+const normalizar = (texto: string) =>
+  texto
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .trim()
+    .toUpperCase();
+
 /**
- * District coordinates fallback for Lima and regional capitals
+ * Centro de cada distrito, calculado desde los establecimientos que tiene.
+ *
+ * Antes esto era una lista escrita a mano con trece distritos de Lima. Quien se
+ * registraba en cualquiera de los otros treinta y siete —Breña, San Juan de
+ * Lurigancho, Comas— acababa con el mapa centrado en Miraflores sin que nada se
+ * lo advirtiera, y con todas las distancias medidas desde allí.
+ *
+ * Ahora sale del propio padrón, así que cubre los 50 distritos cargados y se
+ * actualiza solo cuando cambie el corte. No es el centroide geográfico del
+ * distrito sino el centro de sus establecimientos de salud, que para ordenar
+ * por cercanía es incluso más útil.
+ *
+ * Se usa la mediana y no la media: distritos como Ate, Lurigancho o San Juan de
+ * Lurigancho se estiran más de veinte kilómetros, con casi todos sus
+ * establecimientos apiñados en la parte urbana y unos pocos sueltos en la
+ * quebrada. La media los arrastraba hacia el cerro, donde no vive casi nadie.
  */
-export const DISTRICT_COORDINATES: Record<string, { lat: number; lng: number }> = {
-  Miraflores: { lat: -12.1219, lng: -77.0297 },
-  'San Isidro': { lat: -12.0984, lng: -77.0354 },
-  Surquillo: { lat: -12.1128, lng: -77.0189 },
-  'San Borja': { lat: -12.0911, lng: -76.9996 },
-  'Santiago de Surco': { lat: -12.1456, lng: -76.9942 },
-  Barranco: { lat: -12.1486, lng: -77.0208 },
-  'Jesús María': { lat: -12.0747, lng: -77.0478 },
-  Lince: { lat: -12.0838, lng: -77.0336 },
-  'Magdalena del Mar': { lat: -12.0906, lng: -77.0706 },
-  'Pueblo Libre': { lat: -12.0739, lng: -77.0631 },
-  Lima: { lat: -12.0464, lng: -77.0428 },
-  'San Miguel': { lat: -12.0772, lng: -77.0864 },
-  Callao: { lat: -12.0566, lng: -77.1181 },
-  Arequipa: { lat: -16.409, lng: -71.5375 },
-  Cusco: { lat: -13.5319, lng: -71.9675 },
-  Trujillo: { lat: -8.1118, lng: -79.0286 },
-  Piura: { lat: -5.1945, lng: -80.6328 },
-  Chiclayo: { lat: -6.7714, lng: -79.8409 },
-  Huancayo: { lat: -12.0651, lng: -75.2049 },
+const mediana = (valores: number[]) => {
+  const orden = [...valores].sort((a, b) => a - b);
+  const medio = orden.length >> 1;
+  return orden.length % 2 ? orden[medio] : (orden[medio - 1] + orden[medio]) / 2;
 };
 
-export function getDistrictCoordinates(districtName: string): { lat: number; lng: number } {
-  if (DISTRICT_COORDINATES[districtName]) {
-    return DISTRICT_COORDINATES[districtName];
+const CENTROS_DISTRITO: Map<string, { lat: number; lng: number }> = (() => {
+  const porDistrito = new Map<string, { lat: number[]; lng: number[] }>();
+
+  for (const item of rawEstablecimientos as Array<{ distrito: string; lat: number; lng: number }>) {
+    const clave = normalizar(item.distrito);
+    const acumulado = porDistrito.get(clave) ?? { lat: [], lng: [] };
+    acumulado.lat.push(item.lat);
+    acumulado.lng.push(item.lng);
+    porDistrito.set(clave, acumulado);
   }
-  // Default to Miraflores, Lima centroid
-  return { lat: -12.1219, lng: -77.0297 };
+
+  return new Map(
+    [...porDistrito].map(([clave, { lat, lng }]) => [
+      clave,
+      { lat: mediana(lat), lng: mediana(lng) },
+    ])
+  );
+})();
+
+/**
+ * Referencias de fuera de Lima y Callao.
+ *
+ * El prototipo solo tiene cargados los establecimientos de Lima Metropolitana y
+ * Callao. Estas coordenadas sirven para situar el mapa de una familia de
+ * provincia, pero no habrá establecimientos que enseñarle: la interfaz tiene que
+ * decírselo, no fingir que los de Lima le sirven.
+ */
+const CAPITALES: Record<string, { lat: number; lng: number }> = {
+  AREQUIPA: { lat: -16.409, lng: -71.5375 },
+  CUSCO: { lat: -13.5319, lng: -71.9675 },
+  TRUJILLO: { lat: -8.1118, lng: -79.0286 },
+  PIURA: { lat: -5.1945, lng: -80.6328 },
+  CHICLAYO: { lat: -6.7714, lng: -79.8409 },
+  HUANCAYO: { lat: -12.0651, lng: -75.2049 },
+};
+
+/**
+ * Coordenadas desde las que buscar.
+ *
+ * Devuelve null cuando el distrito no se reconoce. Antes caía a Miraflores, que
+ * es la peor respuesta posible: la familia veía un mapa creíble de un sitio que
+ * no era el suyo. Quien llame a esta función tiene que contemplar el null y
+ * decirlo en pantalla.
+ */
+export function getDistrictCoordinates(
+  districtName: string
+): { lat: number; lng: number } | null {
+  const clave = normalizar(districtName || '');
+  if (!clave) return null;
+
+  return CENTROS_DISTRITO.get(clave) ?? CAPITALES[clave] ?? null;
+}
+
+/** true si el distrito tiene establecimientos cargados en el padrón. */
+export function distritoConCobertura(districtName: string): boolean {
+  return CENTROS_DISTRITO.has(normalizar(districtName || ''));
+}
+
+/** Centro de la zona cubierta, para situar el mapa cuando no hay distrito. */
+export function centroCobertura(): { lat: number; lng: number } {
+  const centros = [...CENTROS_DISTRITO.values()];
+  return {
+    lat: centros.reduce((s, c) => s + c.lat, 0) / centros.length,
+    lng: centros.reduce((s, c) => s + c.lng, 0) / centros.length,
+  };
 }
