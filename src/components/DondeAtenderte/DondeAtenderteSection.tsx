@@ -47,16 +47,18 @@ type NivelFilter = 'TODOS' | 'PRIMER_NIVEL' | 'HOSPITAL';
 type MobileSheetPosition = 'collapsed' | 'medium' | 'expanded';
 
 /**
- * Topes de lo que se dibuja y se lista.
+ * Tope técnico de marcadores en el mapa.
  *
- * El padrón trae 650 establecimientos de Lima y Callao. Todos entran en los
- * cálculos —la distancia, el más cercano, la zona que cubre a la familia— pero
- * volcarlos enteros en pantalla no ayuda a nadie: quien busca dónde llevar a su
- * hijo mira su barrio, no la provincia. Y montar 650 marcadores con su ficha
- * flotante deja el mapa pesado al arrastrarlo.
+ * Quien decide cuántas opciones hay es el radio, no un recorte: a cinco
+ * kilómetros el distrito más denso de Lima llega a 131, así que este tope no
+ * llega a activarse en el uso normal. Está por si se amplía la búsqueda en una
+ * zona muy poblada, porque montar cientos de marcadores con su ficha flotante
+ * deja el mapa pesado al arrastrarlo.
+ *
+ * La LISTA no lleva tope: recortarla a veinticinco mientras el encabezado
+ * anunciaba cuarenta y seis hacía que el número y lo que se veía no cuadraran.
  */
-const MAXIMO_EN_MAPA = 120;
-const MAXIMO_EN_LISTA = 25;
+const MAXIMO_EN_MAPA = 150;
 
 /**
  * Hasta dónde llega "cerca de ti".
@@ -158,6 +160,23 @@ export const DondeAtenderteSection: React.FC<DondeAtenderteSectionProps> = ({
           }
     );
   }, [district, defaultDistrictCoords.lat, defaultDistrictCoords.lng]);
+
+  /**
+   * Soltar el GPS y volver al distrito registrado.
+   *
+   * El permiso del navegador no se puede retirar desde aquí, y una vez pulsado
+   * "usar mi ubicación" no había forma de deshacerlo: si alguien consultaba la
+   * ruta desde el trabajo o desde casa de un familiar, se quedaba con las
+   * distancias medidas desde allí hasta recargar la página.
+   */
+  const handleVolverAlDistrito = () => {
+    setUserLocation({
+      lat: defaultDistrictCoords.lat,
+      lng: defaultDistrictCoords.lng,
+      isBrowserLocation: false,
+      district,
+    });
+  };
 
   const handleRequestGeolocation = () => {
     if (typeof navigator !== 'undefined' && navigator.geolocation) {
@@ -342,17 +361,13 @@ export const DondeAtenderteSection: React.FC<DondeAtenderteSectionProps> = ({
   const sugeridoPorCercania = opcionesOrdenadas[0] ?? null;
   const sugeridoEsDeTuZona = sugeridoPorCercania?.codigo === establecimientoPropio?.codigo;
 
-  // Las listas ya vienen ordenadas, así que recortar por el principio es
-  // quedarse con lo más relevante.
+  // La lista muestra todo lo que hay dentro del radio, para que el número del
+  // encabezado sea exactamente lo que se puede recorrer.
   const establecimientosEnMapa = useMemo(
     () => opcionesOrdenadas.slice(0, MAXIMO_EN_MAPA),
     [opcionesOrdenadas]
   );
-  const establecimientosEnLista = useMemo(
-    () => opcionesOrdenadas.slice(0, MAXIMO_EN_LISTA),
-    [opcionesOrdenadas]
-  );
-  const hayMasQueMostrar = opcionesOrdenadas.length > MAXIMO_EN_LISTA;
+  const establecimientosEnLista = opcionesOrdenadas;
 
   const handleOpenFicha = (item: Establecimiento) => {
     setFichaItem(item);
@@ -407,7 +422,9 @@ export const DondeAtenderteSection: React.FC<DondeAtenderteSectionProps> = ({
       : 'Seguro Privado';
 
   return (
-    <section className="space-y-6">
+    // El colchón de abajo es para la hoja móvil, que va fija al borde inferior:
+    // sin él tapaba los últimos ochenta píxeles de la sección para siempre.
+    <section className="space-y-6 pb-24 lg:pb-0">
       {/* Section Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
@@ -433,7 +450,23 @@ export const DondeAtenderteSection: React.FC<DondeAtenderteSectionProps> = ({
                 : `Distancias desde el centro de ${etiquetaOrigen}`}
             </span>
           </div>
-          {!userLocation.isBrowserLocation && (
+          {userLocation.isBrowserLocation ? (
+            <button
+              type="button"
+              onClick={handleVolverAlDistrito}
+              className="text-[11.5px] font-bold text-[#4A2270] hover:underline flex items-center gap-1 cursor-pointer"
+              title={
+                distritoReconocido
+                  ? `Volver a medir desde ${district}`
+                  : 'Dejar de usar tu ubicación actual'
+              }
+            >
+              <RotateCcw className="w-3 h-3" />
+              <span>
+                {distritoReconocido ? `Volver a ${district}` : 'Quitar mi ubicación'}
+              </span>
+            </button>
+          ) : (
             <button
               type="button"
               onClick={handleRequestGeolocation}
@@ -850,10 +883,7 @@ export const DondeAtenderteSection: React.FC<DondeAtenderteSectionProps> = ({
               Opciones a menos de {radioBusquedaKm} km ({opcionesOrdenadas.length})
             </h3>
             <p className="text-xs text-[#6E6A75] mt-0.5">
-              {etiquetaOrigen} · {coverageDisplayLabel} ·{' '}
-              {hayMasQueMostrar
-                ? `las ${MAXIMO_EN_LISTA} más cercanas`
-                : 'ordenadas por cercanía'}
+              {etiquetaOrigen} · {coverageDisplayLabel} · ordenadas por cercanía
             </p>
           </div>
 
@@ -996,8 +1026,6 @@ export const DondeAtenderteSection: React.FC<DondeAtenderteSectionProps> = ({
                 <p className="text-[11px] text-[#6E6A75]">
                   {mobileSheetPos === 'collapsed'
                     ? 'Toca para ver lista'
-                    : hayMasQueMostrar
-                    ? `Los ${MAXIMO_EN_LISTA} más cercanos`
                     : 'Ordenados por distancia'}
                 </p>
               </div>

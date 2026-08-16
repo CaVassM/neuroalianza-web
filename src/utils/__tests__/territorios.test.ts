@@ -109,6 +109,34 @@ describe('calcularTerritorio', () => {
     }
   });
 
+  it('las zonas no se solapan entre sí', () => {
+    // Dos zonas pisándose significaría decirle a una familia que le tocan dos
+    // establecimientos a la vez. Se comprueba con los vértices: si uno cae
+    // dentro de otra zona, tiene que ser rozando la frontera compartida, no
+    // metido en su interior.
+    const zonas = primerNivel
+      .slice(0, 25)
+      .map((item) => ({ item, zona: calcularTerritorio(item, datos)! }));
+
+    let peorIntrusion = 0;
+
+    for (const { item, zona } of zonas) {
+      for (const { item: vecino, zona: otra } of zonas) {
+        if (vecino.codigo === item.codigo) continue;
+
+        for (const [lat, lng] of zona.poligono) {
+          if (!contienePunto([lat, lng], otra.poligono)) continue;
+          const propia = haversineKm(lat, lng, item.lat, item.lng);
+          const ajena = haversineKm(lat, lng, vecino.lat, vecino.lng);
+          peorIntrusion = Math.max(peorIntrusion, propia - ajena);
+        }
+      }
+    }
+
+    // En kilómetros: cuánto se adentra el peor vértice en zona ajena.
+    expect(peorIntrusion).toBeLessThan(0.03);
+  });
+
   it('con un radio más pequeño la zona encoge', () => {
     const item = primerNivel[0];
     const area = (poligono: Punto[]) => {

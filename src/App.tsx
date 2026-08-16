@@ -374,7 +374,10 @@ export default function App() {
         <button
           type="button"
           onClick={demo.iniciar}
-          className="fixed bottom-4 right-4 z-[55] inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#2E1A47] hover:bg-[#4A2270] text-white text-xs font-bold shadow-lg border border-[#4A2270] transition-all cursor-pointer"
+          // En móvil sube por encima de la hoja de "Dónde atenderte", que vive
+          // pegada abajo: a bottom-4 el botón caía justo sobre sus controles de
+          // Ocultar / Mitad / Expandir y no se podían tocar.
+          className="fixed bottom-24 lg:bottom-4 right-4 z-[55] inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#2E1A47] hover:bg-[#4A2270] text-white text-xs font-bold shadow-lg border border-[#4A2270] transition-all cursor-pointer"
           title="Recorre toda la ruta con una cuenta de ejemplo"
         >
           <FlaskConical className="w-4 h-4 text-[#A78BC7]" />
