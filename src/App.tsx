@@ -209,12 +209,12 @@ export default function App() {
 
         {currentScreen === 'signup' && (
           <SignupView
-            onSignup={({ email, phone }) => {
+            onSignup={({ nombre, email, phone }) => {
               // REEMPLAZA el perfil, no lo mezcla. Antes se hacía spread sobre
               // el perfil de demostración y la familia heredaba su fase 3, su
               // tamizaje y su código de caso: empezaba la ruta a mitad de
               // camino y con resultados que nunca respondió.
-              setUser(crearPerfilNuevo(email, phone));
+              setUser({ ...crearPerfilNuevo(email, phone), name: nombre });
               setCurrentScreen('register-step-1');
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
@@ -263,6 +263,7 @@ export default function App() {
         {currentScreen === 'dashboard' && (
           <DashboardView
             user={user}
+            onUpdateUser={(updated) => setUser(updated)}
             onNavigate={(screen) => {
               setCurrentScreen(screen);
               window.scrollTo({ top: 0, behavior: 'smooth' });

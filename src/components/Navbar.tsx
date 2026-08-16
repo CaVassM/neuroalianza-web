@@ -25,7 +25,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     { screen: 'conoce', label: 'Conócenos' },
     { screen: 'evaluaciones', label: 'Evaluaciones' },
     { screen: 'mi-ruta', label: 'Mi ruta' },
-    { screen: 'familias', label: 'Para familias' },
+    { screen: 'familias', label: 'Información para familias' },
   ];
 
   return (
@@ -90,9 +90,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                 />
                 <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-lg border border-[#E5E1EC] p-3 z-50 animate-in fade-in zoom-in-95">
                   <div className="px-3 py-2 border-b border-[#E5E1EC] mb-2">
-                    {/* El correo es el único identificador del cuidador que
-                        pedimos; el nombre nunca se recoge. */}
-                    <p className="text-xs font-semibold text-[#4A2270] truncate">{user.email}</p>
+                    {user.name && (
+                      <p className="text-xs font-semibold text-[#4A2270] truncate">{user.name}</p>
+                    )}
+                    <p className="text-[11px] text-[#6E6A75] truncate">{user.email}</p>
                     {user.caseCode && (
                       <p className="text-[11px] text-[#6E6A75]">Caso {user.caseCode}</p>
                     )}

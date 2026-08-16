@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { UserProfile, Establecimiento, InsuranceType } from '../../types';
 import rawEstablecimientos from '../../data/establecimientos.json';
-import { haversineKm, getDistrictCoordinates } from '../../utils/distancia';
+import { haversineKm, getDistrictCoordinates, formatDistancia } from '../../utils/distancia';
 import { MapComponent } from './MapComponent';
 import { EstablishmentCard } from './EstablishmentCard';
 import { FichaServicioPanel } from './FichaServicioPanel';
@@ -17,6 +17,7 @@ import {
   AlertTriangle,
   PhoneCall,
   ExternalLink,
+  MessageCircle,
   Info
 } from 'lucide-react';
 import { motion } from 'motion/react';
@@ -59,9 +60,11 @@ export const DondeAtenderteSection: React.FC<DondeAtenderteSectionProps> = ({
 
   const [isLocating, setIsLocating] = useState(false);
 
-  // Selected establishment code
+  // Establecimiento que la familia eligió. Empieza vacío: antes caía a un
+  // código fijo del Centro de Salud Santa Cruz, así que una familia recién
+  // registrada aparecía con un establecimiento "suyo" que nunca escogió.
   const [chosenEstablecimientoCodigo, setChosenEstablecimientoCodigo] = useState<string>(
-    user.selectedEstablecimientoCodigo || '00003421'
+    user.selectedEstablecimientoCodigo || ''
   );
 
   const mapInsuranceToCobertura = (ins: InsuranceType): CoberturaFilter => {
@@ -88,47 +91,25 @@ export const DondeAtenderteSection: React.FC<DondeAtenderteSectionProps> = ({
   const [fichaItem, setFichaItem] = useState<Establecimiento | null>(null);
   const [isFichaOpen, setIsFichaOpen] = useState(false);
 
-  // Attempt browser geolocation on mount with 5-second timeout as required by Section D
+  // La búsqueda arranca SIEMPRE desde el distrito que la familia registró.
+  //
+  // Antes se pedía el GPS solo al abrir la sección: además de disparar el aviso
+  // del navegador sin que nadie lo pidiera, centraba la búsqueda donde la
+  // persona está EN ESE MOMENTO, que no tiene por qué ser donde le corresponde
+  // atenderse. Muchas familias solo pueden ir al establecimiento asignado a su
+  // domicilio, así que el distrito es el punto de partida correcto. El GPS
+  // sigue disponible en el botón "Usar mi ubicación".
   useEffect(() => {
-    if (typeof navigator !== 'undefined' && navigator.geolocation) {
-      const timer = setTimeout(() => {
-        // Fallback if timeout reaches 5s
-        setUserLocation((prev) =>
-          prev.isBrowserLocation
-            ? prev
-            : {
-                lat: defaultDistrictCoords.lat,
-                lng: defaultDistrictCoords.lng,
-                isBrowserLocation: false,
-                district,
-              }
-        );
-      }, 5000);
-
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          clearTimeout(timer);
-          setUserLocation({
-            lat: pos.coords.latitude,
-            lng: pos.coords.longitude,
-            isBrowserLocation: true,
-            district,
-          });
-        },
-        () => {
-          clearTimeout(timer);
-          setUserLocation({
+    setUserLocation((prev) =>
+      prev.isBrowserLocation
+        ? prev // ya pulsó el botón: respetamos su elección
+        : {
             lat: defaultDistrictCoords.lat,
             lng: defaultDistrictCoords.lng,
             isBrowserLocation: false,
             district,
-          });
-        },
-        { timeout: 5000 }
-      );
-
-      return () => clearTimeout(timer);
-    }
+          }
+    );
   }, [district, defaultDistrictCoords.lat, defaultDistrictCoords.lng]);
 
   const handleRequestGeolocation = () => {
@@ -225,6 +206,20 @@ export const DondeAtenderteSection: React.FC<DondeAtenderteSectionProps> = ({
     });
   }, [processedEstablecimientos, coberturaFilter, nivelFilter, activeBarrierFilter, chosenEstablecimientoCodigo]);
 
+  /**
+   * El más cercano de los que quedan tras los filtros.
+   *
+   * La lista sale ordenada por distancia, pero eso hay que deducirlo. Marcar
+   * uno como sugerido le da a la familia una respuesta a "¿y a cuál voy?" sin
+   * tener que comparar seis fichas.
+   */
+  const sugeridoPorCercania = useMemo(() => {
+    if (filteredEstablecimientos.length === 0) return null;
+    return filteredEstablecimientos.reduce((masCerca, item) =>
+      (item.distanciaKm ?? Infinity) < (masCerca.distanciaKm ?? Infinity) ? item : masCerca
+    );
+  }, [filteredEstablecimientos]);
+
   const handleOpenFicha = (item: Establecimiento) => {
     setFichaItem(item);
     setIsFichaOpen(true);
@@ -238,6 +233,15 @@ export const DondeAtenderteSection: React.FC<DondeAtenderteSectionProps> = ({
         selectedEstablecimientoCodigo: item.codigo,
       });
     }
+
+    // Al elegir se cierra el panel lateral y la vista queda donde estaba: en
+    // mitad del listado, sin señal de que la elección se guardó. Subimos al
+    // resumen del establecimiento, que es donde aparece qué hacer ahora.
+    setTimeout(() => {
+      document
+        .getElementById('resumen-establecimiento-elegido')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 320);
   };
 
   const handleClearFilters = () => {
@@ -301,40 +305,111 @@ export const DondeAtenderteSection: React.FC<DondeAtenderteSectionProps> = ({
               className="text-[11.5px] font-bold text-[#4A2270] hover:underline flex items-center gap-1 cursor-pointer"
             >
               <Locate className="w-3 h-3" />
-              <span>{isLocating ? 'Ubicando...' : 'Usar mi GPS'}</span>
+              <span>{isLocating ? 'Ubicando…' : 'Usar mi ubicación actual'}</span>
             </button>
           )}
         </div>
       </div>
 
+      {/* Sugerencia por cercanía, mientras la familia no haya elegido.
+          Sin esto la sección abre con seis fichas y ninguna respuesta a la
+          pregunta que trae: "¿y a cuál voy?". */}
+      {!chosenEstablecimiento && sugeridoPorCercania && (
+        <div className="bg-[#FAF8FD] border border-[#D5C6EB] rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#E9DFF5] text-[#4A2270] flex items-center justify-center shrink-0 mt-0.5">
+              <Compass className="w-5 h-5" />
+            </div>
+            <div>
+              <span className="text-[11px] font-bold tracking-wider text-[#4A2270] uppercase">
+                El más cercano a ti
+              </span>
+              <h3 className="text-[16px] font-bold text-[#2E2A33]">
+                {sugeridoPorCercania.nombre}
+              </h3>
+              <p className="text-xs text-[#6E6A75] mt-0.5">
+                {sugeridoPorCercania.clasificacion} ({sugeridoPorCercania.categoria})
+                {sugeridoPorCercania.distanciaKm !== undefined && (
+                  <> · a {formatDistancia(sugeridoPorCercania.distanciaKm)}</>
+                )}
+                {' '}· {userLocation.isBrowserLocation
+                  ? 'desde tu ubicación actual'
+                  : `desde ${district}`}
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => handleOpenFicha(sugeridoPorCercania)}
+            className="shrink-0 px-4 py-2.5 bg-[#4A2270] hover:bg-[#381559] text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer"
+          >
+            Ver este primero
+          </button>
+        </div>
+      )}
+
       {/* Primary Chosen Establishment Banner */}
       {chosenEstablecimiento && (
-        <div className="space-y-2">
-          <div className="bg-[#E9DFF5]/60 border border-[#D5C6EB] rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-xl bg-[#4A2270] text-white flex items-center justify-center shrink-0 mt-0.5">
-                <Sparkles className="w-5 h-5" />
+        <div className="space-y-2" id="resumen-establecimiento-elegido">
+          <div className="bg-[#E9DFF5]/60 border border-[#D5C6EB] rounded-2xl p-4 sm:p-5 space-y-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#4A2270] text-white flex items-center justify-center shrink-0 mt-0.5">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <div>
+                  <span className="text-[11px] font-bold tracking-wider text-[#4A2270] uppercase">
+                    Lugar sugerido para tu ruta
+                  </span>
+                  <h3 className="text-[16px] font-bold text-[#2E2A33]">
+                    {chosenEstablecimiento.nombre}
+                  </h3>
+                  <p className="text-xs text-[#6E6A75] mt-0.5">
+                    {chosenEstablecimiento.clasificacion} ({chosenEstablecimiento.categoria}) · {chosenEstablecimiento.direccion}
+                  </p>
+                </div>
               </div>
-              <div>
-                <span className="text-[11px] font-bold tracking-wider text-[#4A2270] uppercase">
-                  Establecimiento elegido para tu ruta
-                </span>
-                <h3 className="text-[16px] font-bold text-[#2E2A33]">
-                  {chosenEstablecimiento.nombre}
-                </h3>
-                <p className="text-xs text-[#6E6A75] mt-0.5">
-                  {chosenEstablecimiento.clasificacion} ({chosenEstablecimiento.categoria}) · {chosenEstablecimiento.direccion}
-                </p>
-              </div>
+
+              <button
+                type="button"
+                onClick={() => handleOpenFicha(chosenEstablecimiento)}
+                className="shrink-0 px-4 py-2 bg-white hover:bg-[#FAF8FD] border border-[#D5C6EB] text-[#4A2270] text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer"
+              >
+                Ver ficha y requisitos
+              </button>
             </div>
 
-            <button
-              type="button"
-              onClick={() => handleOpenFicha(chosenEstablecimiento)}
-              className="shrink-0 px-4 py-2 bg-white hover:bg-[#FAF8FD] border border-[#D5C6EB] text-[#4A2270] text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer"
-            >
-              Ver ficha y requisitos
-            </button>
+            {/* Qué hacer ahora.
+                Elegir el establecimiento dejaba a la familia sin saber cuál era
+                el siguiente movimiento; estos son los tres pasos concretos. */}
+            <div className="bg-white/70 border border-[#D5C6EB] rounded-xl p-4 space-y-2.5">
+              <h4 className="text-[13px] font-bold text-[#4A2270]">
+                ¿Y ahora qué hago?
+              </h4>
+              <ol className="space-y-1.5 text-[12.5px] text-[#2E2A33]">
+                {[
+                  'Llama o acércate y pide una cita. En la ficha tienes el teléfono, el horario y por qué servicio entrar.',
+                  'Lleva el resultado de tu tamizaje y los documentos de la lista.',
+                  'Cuando vuelvas de la cita, márcala en tu ruta con "Ya fui a mi cita" para saber qué sigue.',
+                ].map((paso, i) => (
+                  <li key={i} className="flex items-start gap-2">
+                    <span className="w-4 h-4 rounded-full bg-[#E9DFF5] text-[#4A2270] text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+                      {i + 1}
+                    </span>
+                    <span className="leading-relaxed">{paso}</span>
+                  </li>
+                ))}
+              </ol>
+              <p className="text-[11.5px] text-[#6E6A75] leading-relaxed pt-1.5 border-t border-[#E9DFF5] flex items-start gap-1.5">
+                <MessageCircle className="w-3.5 h-3.5 text-[#4A2270] shrink-0 mt-px" />
+                <span>
+                  Puedes llevarte tu ruta al celular: más abajo, en{' '}
+                  <strong className="text-[#2E2A33]">Lleva tu ruta en el celular</strong>,
+                  te enviamos el enlace por WhatsApp para retomarla y contarnos cómo te fue.
+                </span>
+              </p>
+            </div>
           </div>
 
           {/* Level mismatch non-blocking amber warning */}

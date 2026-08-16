@@ -62,11 +62,12 @@ export const PUNTAJE_DEMO = calcularPuntaje(RESPUESTAS_DEMO);
  */
 export function cuentaSintetizada(): UserProfile {
   return {
-    name: '',
+    name: 'María',
     email: 'demo@pan.pe',
     phone: '987654321',
     child: {
       nickname: 'Luciana',
+      birthDay: '10',
       birthMonth: 'Diciembre',
       birthYear: '2024',
       avatarId: 'cat',
@@ -95,7 +96,7 @@ export const GUION: PasoDemo[] = [
     id: 'registro',
     pantalla: 'signup',
     titulo: 'Crear una cuenta',
-    detalle: 'Solo correo y celular. No pedimos DNI ni el nombre del cuidador.',
+    detalle: 'Tu nombre, correo y celular. No pedimos DNI ni documentos de identidad.',
     duracion: 4500,
     perfil: () => cuentaSintetizada(),
   },

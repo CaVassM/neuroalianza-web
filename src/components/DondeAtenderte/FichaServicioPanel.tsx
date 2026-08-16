@@ -71,8 +71,15 @@ export const FichaServicioPanel: React.FC<FichaServicioPanelProps> = ({
 
   // Requirements according to coverage
   const getRequisitos = () => {
+    // El resultado del tamizaje encabeza la lista en todos los casos: es lo que
+    // la familia trae y lo que le da al profesional el motivo de consulta ya
+    // documentado, en vez de tener que explicarlo de memoria en ventanilla.
+    const resultadoTamizaje =
+      'El resultado de tu tamizaje (puedes descargarlo en PDF desde Mi ruta).';
+
     if (item.cobertura === 'SIS' || item.institucion === 'MINSA') {
       return [
+        resultadoTamizaje,
         'DNI vigente del menor (o comprobante de trámite) y DNI del padre, madre o apoderado.',
         'Carné de Control de Crecimiento y Desarrollo (CRED) y carné de vacunas físico.',
         'Hoja de Referencia (FUA) en caso de acudir por derivación médica.',
@@ -80,6 +87,7 @@ export const FichaServicioPanel: React.FC<FichaServicioPanelProps> = ({
     }
     if (item.cobertura === 'EsSalud' || item.institucion === 'ESSALUD') {
       return [
+        resultadoTamizaje,
         'DNI del menor y DNI del titular del seguro.',
         'Acreditación de seguro vigente (puedes verificarla en la web de EsSalud).',
         'Orden de interconsulta o referencia si vas a una especialidad.',
@@ -87,6 +95,7 @@ export const FichaServicioPanel: React.FC<FichaServicioPanelProps> = ({
     }
     // Privado
     return [
+      resultadoTamizaje,
       'DNI del menor y DNI del padre/madre.',
       'Tarjeta o carné de afiliación a tu seguro médico privado / EPS o póliza de salud.',
       'Documento de identidad del titular y medio de pago para deducible/copago.',
@@ -231,7 +240,7 @@ export const FichaServicioPanel: React.FC<FichaServicioPanelProps> = ({
                 {isPrimary && (
                   <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#4A2270] text-white text-[12.5px] font-bold">
                     <Check className="w-3.5 h-3.5" />
-                    <span>Tu lugar elegido</span>
+                    <span>Lugar sugerido</span>
                   </span>
                 )}
               </div>
@@ -243,7 +252,7 @@ export const FichaServicioPanel: React.FC<FichaServicioPanelProps> = ({
               <div className="bg-white border-2 border-[#D5CCE0] rounded-2xl p-5 space-y-4">
                 <h3 className="text-[16px] font-bold text-[#2E2A33] flex items-center gap-2">
                   <Phone className="w-4 h-4 text-[#4A2270]" />
-                  <span>Cómo sacar tu cita</span>
+                  <span>Contacto y por dónde entrar</span>
                 </h3>
 
                 {/* Por qué servicio entrar: pediatría si la hay, CRED si no. */}
@@ -426,12 +435,12 @@ export const FichaServicioPanel: React.FC<FichaServicioPanelProps> = ({
                 {isPrimary ? (
                   <>
                     <Check className="w-4 h-4 stroke-[3]" />
-                    <span>Establecimiento marcado en tu ruta</span>
+                    <span>Es el lugar sugerido en tu ruta</span>
                   </>
                 ) : (
                   <>
                     <Bookmark className="w-4 h-4" />
-                    <span>Marcar como mi establecimiento</span>
+                    <span>Elegir este lugar para mi ruta</span>
                   </>
                 )}
               </button>

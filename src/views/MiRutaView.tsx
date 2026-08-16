@@ -3,11 +3,13 @@ import { UserProfile, InsuranceType, ScreenType, BarrierReport } from '../types'
 import { DondeAtenderteSection } from '../components/DondeAtenderte/DondeAtenderteSection';
 import { RastreadorFase } from '../components/PhaseTracker/RastreadorFase';
 import { BotonSeguimientoWhatsApp } from '../components/BotonSeguimientoWhatsApp';
+import { SeguimientoTratamiento } from '../components/PhaseTracker/SeguimientoTratamiento';
 import { MONTHS, YEARS } from '../constants/data';
 import { generateAndDownloadScreeningPDF } from '../utils/pdfGenerator';
 import alternativasData from '../data/alternativas.json';
 import {
   ClipboardList,
+  Sparkles,
   Navigation,
   FileCheck2, 
   ShieldCheck, 
@@ -333,10 +335,13 @@ export const MiRutaView: React.FC<MiRutaViewProps> = ({ user, onUpdateUser, onNa
                       onChange={(e) => setProfesional(e.target.value as any)}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E1EC] text-sm focus:outline-none focus:ring-2 focus:ring-[#4A2270]"
                     >
-                      <option value="neurologo">Neurólogo / Neuropediatra</option>
-                      <option value="psiquiatra_infantil">Psiquiatra infantil</option>
-                      <option value="pediatra">Pediatra</option>
-                      <option value="psicologo">Psicólogo clínico</option>
+                      {/* Solo estas dos especialidades emiten el diagnóstico de
+                          TEA en la ruta peruana. El pediatra y el psicólogo
+                          participan en la evaluación, pero no lo confirman, y
+                          ofrecerlos aquí llevaba a registrar como diagnóstico
+                          algo que todavía no lo es. */}
+                      <option value="neurologo">Neuropediatra</option>
+                      <option value="psiquiatra_infantil">Psiquiatra pediátrico</option>
                       <option value="otro">Otro especialista</option>
                     </select>
                   </div>
@@ -447,6 +452,43 @@ export const MiRutaView: React.FC<MiRutaViewProps> = ({ user, onUpdateUser, onNa
         {/* 6-Phase Tracker */}
         <RastreadorFase user={user} onUpdateUser={onUpdateUser} />
       </div>
+
+      {/* Fase 5: el asistente acaba de desbloquearse y es lo que más ayuda
+          ahora, así que el aviso va arriba del todo, no al final de la página
+          donde había que bajar para encontrarlo. */}
+      {faseActual >= 5 && (
+        <div className="bg-[#F4EFFB] border border-[#D5CCE0] rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 rounded-xl bg-[#E9DFF5] flex items-center justify-center shrink-0">
+              <Sparkles className="w-4.5 h-4.5 text-[#4A2270]" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-[15px] font-bold text-[#4A2270]">
+                Ahora tus dudas las resuelve el asistente
+              </h3>
+              <p className="text-[13px] text-[#2E2A33] leading-relaxed max-w-xl">
+                Con el diagnóstico registrado se habilitó{' '}
+                <strong>Información para familias</strong>: una biblioteca de temas y un
+                asistente que responde con documentos verificados y te muestra de dónde
+                sacó cada respuesta. Es el mejor sitio para lo que viene ahora.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => onNavigate?.('familias')}
+            className="w-full sm:w-auto shrink-0 px-6 py-3 bg-[#4A2270] hover:bg-[#381559] text-white text-sm font-bold rounded-xl transition-all shadow-xs cursor-pointer flex items-center justify-center gap-2"
+          >
+            <span>Ir a información para familias</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Fase 6: la ruta ya no avanza más, así que lo que toca es sostener. */}
+      {faseActual === 6 && (
+        <SeguimientoTratamiento user={user} onUpdateUser={onUpdateUser} />
+      )}
 
       {/* Siguiente paso cuando la ruta aún no puede arrancar.
           En fase 2 la familia ya tiene su caso pero no un resultado que llevar

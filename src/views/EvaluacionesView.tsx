@@ -41,11 +41,19 @@ export const EvaluacionesView: React.FC<EvaluacionesViewProps> = ({
     onNavigate('cuestionario');
   };
 
-  const upcomingTools = [
-    'TDAH',
-    'Trastornos del lenguaje',
-    'Retraso del desarrollo',
-    'Hitos del desarrollo por edad',
+  // Lo que viene, con su rango de edad. Sin el rango, una familia cuyo hijo se
+  // sale de los 16-30 meses del M-CHAT no sabe si algún día habrá algo para
+  // ella o si la plataforma simplemente no la contempla.
+  const upcomingTools: { nombre: string; edad: string; nota?: string }[] = [
+    {
+      nombre: 'Hitos del desarrollo por edad',
+      edad: '0 a 60 meses',
+      nota: 'Para acompañar antes y después de la ventana del M-CHAT',
+    },
+    { nombre: 'Tamizaje de autismo en preescolares', edad: '31 a 72 meses' },
+    { nombre: 'Trastornos del lenguaje', edad: '24 a 72 meses' },
+    { nombre: 'TDAH', edad: 'Desde 48 meses' },
+    { nombre: 'Retraso global del desarrollo', edad: '0 a 60 meses' },
   ];
 
   return (
@@ -196,14 +204,33 @@ export const EvaluacionesView: React.FC<EvaluacionesViewProps> = ({
 
       {/* Upcoming */}
       <section>
-        <h2 className="text-[20px] font-bold text-[#2E2A33] mb-4">Próximamente</h2>
+        <h2 className="text-[20px] font-bold text-[#2E2A33] mb-1">Próximamente</h2>
+        <p className="text-[14px] text-[#6E6A75] mb-4 leading-relaxed max-w-2xl">
+          El M-CHAT-R/F cubre de 16 a 30 meses. Estamos ampliando el catálogo para
+          acompañar a {childName} antes y después de esa ventana, y para otras
+          condiciones del neurodesarrollo.
+        </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {upcomingTools.map((tool, idx) => (
-            <div key={idx} className="bg-[#F7F5FA] border border-[#E5E1EC] rounded-2xl p-6 opacity-75">
-              <span className="inline-block bg-[#E5E1EC] text-[#6E6A75] text-[11px] font-bold px-2 py-1 rounded-md uppercase tracking-wider mb-3">
-                Próximamente
-              </span>
-              <h3 className="font-bold text-[#2E2A33]">{tool}</h3>
+          {upcomingTools.map((tool) => (
+            <div
+              key={tool.nombre}
+              className="bg-[#F7F5FA] border border-[#E5E1EC] rounded-2xl p-6 opacity-80"
+            >
+              <div className="flex items-center gap-2 mb-3 flex-wrap">
+                <span className="inline-block bg-[#E5E1EC] text-[#6E6A75] text-[11px] font-bold px-2 py-1 rounded-md uppercase tracking-wider">
+                  Próximamente
+                </span>
+                <span className="inline-flex items-center gap-1 bg-white border border-[#E5E1EC] text-[#4A2270] text-[11px] font-bold px-2 py-1 rounded-md">
+                  <Clock className="w-3 h-3" />
+                  {tool.edad}
+                </span>
+              </div>
+              <h3 className="font-bold text-[#2E2A33] leading-snug">{tool.nombre}</h3>
+              {tool.nota && (
+                <p className="text-[12.5px] text-[#6E6A75] mt-1 leading-relaxed">
+                  {tool.nota}
+                </p>
+              )}
             </div>
           ))}
         </div>

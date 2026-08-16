@@ -3,11 +3,12 @@ import { Logo } from '../components/Logo';
 import { ClipboardList, MapPin, ShieldCheck, Eye, EyeOff, AlertCircle, MessageCircle } from 'lucide-react';
 
 interface SignupViewProps {
-  onSignup: (datos: { email: string; phone: string }) => void;
+  onSignup: (datos: { nombre: string; email: string; phone: string }) => void;
   onGoToLogin: () => void;
 }
 
 export const SignupView: React.FC<SignupViewProps> = ({ onSignup, onGoToLogin }) => {
+  const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -27,13 +28,20 @@ export const SignupView: React.FC<SignupViewProps> = ({ onSignup, onGoToLogin })
   const isPasswordValid = password.length >= 8;
   const doPasswordsMatch = password === confirmPassword;
 
+  const isNombreValid = nombre.trim().length >= 2 && !/\d/.test(nombre);
+
   const isValid =
-    isEmailValid && isPhoneValid && isPasswordValid && doPasswordsMatch && termsAccepted;
+    isNombreValid &&
+    isEmailValid &&
+    isPhoneValid &&
+    isPasswordValid &&
+    doPasswordsMatch &&
+    termsAccepted;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!isValid) return;
-    onSignup({ email: email.trim(), phone: phoneDigits });
+    onSignup({ nombre: nombre.trim(), email: email.trim(), phone: phoneDigits });
   };
 
   return (
@@ -89,7 +97,7 @@ export const SignupView: React.FC<SignupViewProps> = ({ onSignup, onGoToLogin })
             Qué datos usamos
           </h4>
           <p className="text-[13px] text-white/80 leading-relaxed pr-4">
-            La edad de tu hijo, tu distrito y tu tipo de seguro, para personalizar la orientación, y tu celular para avisarte por WhatsApp sobre tu caso. No pedimos DNI ni documentos de identidad.
+            Tu nombre y el de tu hijo o hija para acompañarte de forma cercana; su fecha de nacimiento, tu distrito y tu tipo de seguro para personalizar la orientación; y tu celular para avisarte por WhatsApp sobre tu caso. No pedimos DNI ni documentos de identidad.
           </p>
         </div>
       </div>
@@ -106,6 +114,26 @@ export const SignupView: React.FC<SignupViewProps> = ({ onSignup, onGoToLogin })
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-5">
+              <div>
+                <label className="block text-[13px] font-semibold text-[#2E2A33] mb-2">
+                  ¿Cómo te llamas?
+                </label>
+                <input
+                  type="text"
+                  value={nombre}
+                  onChange={(e) => setNombre(e.target.value)}
+                  placeholder="Tu nombre o cómo prefieres que te llamemos"
+                  maxLength={40}
+                  className="w-full px-4 py-3 rounded-lg border border-[#E5E1EC] bg-white text-[15px] text-[#2E2A33] placeholder-[#6E6A75]/60 focus:outline-none focus:border-[#4A2270] focus:ring-1 focus:ring-[#4A2270] transition-colors"
+                />
+                {nombre.length > 0 && !isNombreValid && (
+                  <p className="mt-1.5 text-[12px] font-medium text-rose-600 flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5" />
+                    <span>Escribe tu nombre, sin números.</span>
+                  </p>
+                )}
+              </div>
+
               <div>
                 <label className="block text-[13px] font-semibold text-[#2E2A33] mb-2">
                   Correo electrónico

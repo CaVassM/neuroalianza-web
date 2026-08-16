@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, Sparkles, Clock } from 'lucide-react';
+import { ChevronDown, Sparkles, Clock, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { CasePhase } from '../../types';
 import {
@@ -9,6 +9,30 @@ import {
   type CategoriaBiblioteca,
   type PreguntaBiblioteca,
 } from '../../data/biblioteca';
+
+/** Fuentes oficiales a las que derivar cuando el corpus no alcanza. */
+const ENLACES_OFICIALES = [
+  {
+    titulo: 'CONADIS',
+    detalle: 'Certificado de discapacidad y derechos',
+    url: 'https://www.gob.pe/conadis',
+  },
+  {
+    titulo: 'MINSA · Salud mental',
+    detalle: 'Centros de Salud Mental Comunitaria',
+    url: 'https://www.gob.pe/minsa',
+  },
+  {
+    titulo: 'Aprenda los signos. Reaccione pronto.',
+    detalle: 'Hitos del desarrollo, CDC en español',
+    url: 'https://www.cdc.gov/act-early/es/',
+  },
+  {
+    titulo: 'Autism Speaks en español',
+    detalle: 'Guías y kits para familias',
+    url: 'https://www.autismspeaks.org/recursos-autismo',
+  },
+];
 
 interface Props {
   fase: CasePhase;
@@ -177,6 +201,40 @@ export const BibliotecaPreguntas: React.FC<Props> = ({ fase, onPreguntar, ocupad
         verificados. Las marcadas como <strong className="font-semibold">Pronto</strong>{' '}
         esperan material de fuentes peruanas.
       </p>
+
+      {/* Salidas hacia fuentes oficiales.
+          El corpus no cubre lo peruano, y varias preguntas de la biblioteca
+          salen como "Pronto". Dejar a la familia sin ninguna alternativa sería
+          cerrarle la puerta; estos son los sitios donde sí puede resolverlo. */}
+      <div className="pt-4 border-t border-[#F0EDF5] space-y-2.5">
+        <h4 className="text-[13px] font-bold text-[#2E2A33]">
+          ¿Necesitas más información?
+        </h4>
+        <p className="text-[12.5px] text-[#6E6A75] leading-relaxed">
+          Estos enlaces oficiales complementan lo que encuentras aquí:
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {ENLACES_OFICIALES.map((enlace) => (
+            <a
+              key={enlace.url}
+              href={enlace.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl bg-white border border-[#E5E1EC] hover:border-[#4A2270] transition-all group"
+            >
+              <span className="min-w-0">
+                <span className="block text-[13px] font-semibold text-[#2E2A33] truncate">
+                  {enlace.titulo}
+                </span>
+                <span className="block text-[11.5px] text-[#6E6A75] truncate">
+                  {enlace.detalle}
+                </span>
+              </span>
+              <ExternalLink className="w-3.5 h-3.5 text-[#4A2270] shrink-0 group-hover:scale-110 transition-transform" />
+            </a>
+          ))}
+        </div>
+      </div>
     </div>
   );
 };

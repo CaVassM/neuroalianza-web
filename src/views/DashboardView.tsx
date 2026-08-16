@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ScreenType, UserProfile } from '../types';
 import { AvatarIcon } from '../components/Avatars';
 import { RastreadorCompacto } from '../components/PhaseTracker/RastreadorCompacto';
@@ -12,19 +12,37 @@ import {
   HelpCircle, 
   ShieldCheck, 
   ArrowRight,
+  Compass,
+  X,
   CheckCircle2
 } from 'lucide-react';
 
 interface DashboardViewProps {
   user: UserProfile;
   onNavigate: (screen: ScreenType) => void;
+  onUpdateUser?: (actualizado: UserProfile) => void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
   user,
   onNavigate,
+  onUpdateUser,
 }) => {
-  const childName = user.child.nickname || 'Luciana';
+  const childName = user.child.nickname || 'tu hijo/a';
+
+  // Bienvenida que invita a Conócenos, una vez por CUENTA.
+  //
+  // Antes la marca vivía en localStorage, o sea por navegador: quien ya había
+  // abierto la aplicación una vez no volvía a verla, ni siquiera después de
+  // registrarse. Justo al revés de lo que hace falta, porque el momento en que
+  // más sirve es el primer ingreso de una cuenta nueva.
+  const [cerradaEnEstaSesion, setCerradaEnEstaSesion] = useState(false);
+  const mostrarBienvenida = !user.bienvenidaVista && !cerradaEnEstaSesion;
+
+  const cerrarBienvenida = () => {
+    setCerradaEnEstaSesion(true);
+    onUpdateUser?.({ ...user, bienvenidaVista: true });
+  };
 
   const featureCards = [
     {
@@ -41,7 +59,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     },
     {
       id: 'familias' as ScreenType,
-      title: 'Para familias',
+      title: 'Información para familias',
       description: 'Información confiable para acompañarte en cada etapa.',
       icon: <BookOpen className="w-5 h-5 text-[#4A2270]" />,
     },
@@ -54,9 +72,81 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     },
   ];
 
+  // Escape también cierra: es el reflejo de cualquiera ante un modal.
+  useEffect(() => {
+    if (!mostrarBienvenida) return;
+    const alPulsar = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') cerrarBienvenida();
+    };
+    window.addEventListener('keydown', alPulsar);
+    return () => window.removeEventListener('keydown', alPulsar);
+  }, [mostrarBienvenida]); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
     <div className="w-full max-w-6xl mx-auto px-4 sm:px-8 py-8 sm:py-10 space-y-8 animate-in fade-in duration-300 relative z-10">
-      
+
+      {/* Bienvenida: por dónde empezar.
+          Suave a propósito: fondo tenue, se cierra tocando fuera, con Escape o
+          con la X, y la opción de saltarla está al mismo nivel que la de ir.
+          Es una sugerencia, no un peaje. */}
+      {mostrarBienvenida && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/25 p-0 sm:p-4 animate-in fade-in duration-200"
+          onClick={cerrarBienvenida}
+          role="presentation"
+        >
+          <div
+            className="bg-white rounded-t-3xl sm:rounded-2xl p-7 sm:p-9 max-w-[440px] w-full shadow-2xl border border-[#E5E1EC] space-y-5 relative animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-250"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={cerrarBienvenida}
+              className="absolute top-4 right-4 p-1.5 rounded-lg text-[#6E6A75] hover:bg-[#F7F5FA] transition-colors cursor-pointer"
+              aria-label="Cerrar"
+            >
+              <X className="w-4.5 h-4.5" />
+            </button>
+            <div className="w-14 h-14 rounded-2xl bg-[#F4EFFB] text-[#4A2270] flex items-center justify-center">
+              <Compass className="w-7 h-7" />
+            </div>
+
+            <div className="space-y-2">
+              <h2 className="text-[24px] font-fraunces font-bold text-[#2E2A33] leading-tight">
+                ¿Por dónde empiezo?
+              </h2>
+              <p className="text-[14px] text-[#6E6A75] leading-relaxed">
+                Antes de nada, pasa por <strong className="text-[#2E2A33]">Conócenos</strong>.
+                Ahí te contamos en dos minutos qué sí hacemos, qué no, y hasta dónde llega
+                esta versión. Así sabes qué esperar de PAN.
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-2.5 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  cerrarBienvenida();
+                  onNavigate('conoce');
+                }}
+                className="flex-1 py-3 bg-[#4A2270] hover:bg-[#381559] text-white text-[14px] font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
+              >
+                <span>Ir a Conócenos</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={cerrarBienvenida}
+                className="flex-1 sm:flex-none px-5 py-3 bg-white border border-[#E5E1EC] text-[#6E6A75] hover:bg-[#F7F5FA] text-[14px] font-semibold rounded-xl transition-all cursor-pointer"
+              >
+                Ahora no
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
       {/* 1. HERO BANNER (Split Layout) */}
       <section className="bg-white rounded-2xl overflow-hidden shadow-sm border border-[#E5E1EC] flex flex-col md:flex-row mb-10 shrink-0 relative">
         {/* Left Text Content */}
@@ -65,12 +155,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             Evaluación del desarrollo
           </p>
           
-          {/* Sin nombre: el registro nunca pide el del cuidador. El saludo
-              caía a "María", del perfil de demostración, y le daba la
-              bienvenida a la familia con un nombre que no era el suyo. */}
+          {/* El nombre del cuidador SÍ se pide ahora, al crear la cuenta. Si
+              aun así falta, se saluda sin nombre en vez de inventar uno. */}
           <h1 className="text-3xl sm:text-4xl lg:text-[44px] font-fraunces font-bold text-[#2E2A33] leading-[1.15] tracking-tight mb-4">
-            Estamos aquí<br />
-            para acompañarte.
+            {user.name ? <>Hola, {user.name}.<br /></> : null}
+            Estamos aquí para acompañarte.
           </h1>
           
           <p className="text-[#6E6A75] text-base lg:text-lg mb-8 max-w-md leading-relaxed">
@@ -136,7 +225,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <ShieldCheck className="w-5 h-5 text-[#4A2270]" />
         </div>
         <p className="text-xs text-[#4A2270] font-medium leading-relaxed">
-          Tus datos se usan solo para personalizar la orientación. No pedimos el nombre del niño ni ningún dato que permita identificarlo.
+          Tus datos se usan solo para personalizar la orientación y para escribirte por
+          WhatsApp sobre tu caso. No pedimos DNI ni documentos de identidad.
         </p>
       </section>
     </div>

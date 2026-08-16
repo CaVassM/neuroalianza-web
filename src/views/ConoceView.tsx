@@ -116,11 +116,11 @@ export const ConoceView: React.FC<ConoceViewProps> = ({ onNavigateToEvaluaciones
         </motion.div>
 
         <h1 className="text-3xl sm:text-5xl font-fraunces font-bold text-[#2E2A33] tracking-tight leading-[1.15]">
-          Acompañamos a tu familia en el camino del desarrollo infantil
+          Acompañamos a tu familia en el camino del neurodesarrollo
         </h1>
 
         <p className="text-base sm:text-lg text-[#6E6A75] leading-relaxed max-w-2xl mx-auto font-normal">
-          Sin rodeos ni términos médicos confusos. Te ayudamos a entender lo que observas en tu hijo/a, conocer tu ruta en el sistema de salud (SIS/EsSalud) y saber exactamente a dónde acudir.
+          Sin rodeos ni términos médicos confusos. Te ayudamos a entender lo que observas en tu hijo/a, conocer tu ruta en el sistema público de salud y saber exactamente a dónde acudir.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 pt-2">
@@ -241,7 +241,7 @@ export const ConoceView: React.FC<ConoceViewProps> = ({ onNavigateToEvaluaciones
         <div className="flex items-center gap-2">
           <span className="w-3 h-3 rounded-full bg-[#2E7D5B]" />
           <h2 className="text-xl sm:text-2xl font-bold text-[#2E2A33]">
-            Qué sí hacemos en PAN
+            Qué sí ofrecemos en PAN
           </h2>
         </div>
 
@@ -283,7 +283,7 @@ export const ConoceView: React.FC<ConoceViewProps> = ({ onNavigateToEvaluaciones
         <div className="flex items-center gap-2">
           <span className="w-3 h-3 rounded-full bg-[#C77700]" />
           <h2 className="text-xl sm:text-2xl font-bold text-[#2E2A33]">
-            Qué no hacemos (Claridad e integridad)
+            Qué no ofrecemos en PAN
           </h2>
         </div>
 
@@ -311,6 +311,40 @@ export const ConoceView: React.FC<ConoceViewProps> = ({ onNavigateToEvaluaciones
               </motion.div>
             );
           })}
+        </div>
+      </motion.section>
+
+      {/* Alcance del prototipo.
+          La ruta está construida sobre el SIS: los pasos, los establecimientos
+          y las referencias son los del sistema público. Decirlo evita que una
+          familia con seguro privado siga indicaciones que no le corresponden. */}
+      <motion.section
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: '-50px' }}
+        transition={{ duration: 0.5 }}
+      >
+        <div className="bg-white border border-[#E5E1EC] rounded-2xl p-5 sm:p-6 flex items-start gap-4 shadow-xs">
+          <div className="w-10 h-10 rounded-xl bg-[#E9DFF5] flex items-center justify-center shrink-0">
+            <Compass className="w-5 h-5 text-[#4A2270]" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-[16px] sm:text-lg font-bold text-[#2E2A33]">
+              Hasta dónde llega esta versión
+            </h2>
+            <p className="text-[13.5px] text-[#6E6A75] leading-relaxed">
+              La ruta de atención está definida sobre el{' '}
+              <strong className="text-[#2E2A33]">SIS</strong>: los pasos, los
+              establecimientos y las hojas de referencia son los del sistema público de
+              salud. La atención en <strong className="text-[#2E2A33]">clínicas privadas
+              y EPS</strong> todavía no está contemplada en este prototipo.
+            </p>
+            <p className="text-[12.5px] text-[#8A8594] leading-relaxed">
+              Si tienes seguro privado, la orientación general sobre el neurodesarrollo
+              te sirve igual, pero los pasos concretos para conseguir una cita no
+              corresponden a tu cobertura.
+            </p>
+          </div>
         </div>
       </motion.section>
 

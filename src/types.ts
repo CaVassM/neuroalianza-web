@@ -97,8 +97,24 @@ export interface UserProfile {
   phone?: string;
   /** Id del seguimiento en el servidor. Es la credencial del enlace: no mostrar. */
   seguimientoId?: string;
+  /**
+   * Si ya se le mostró la bienvenida que invita a Conócenos.
+   * Va en el perfil y no en el navegador: cada cuenta nueva debe verla, aunque
+   * alguien ya haya usado esta computadora antes.
+   */
+  bienvenidaVista?: boolean;
   /** Servicios a los que una cita derivó. Habilitan ese flujo al registrar la siguiente. */
   derivaciones?: ServicioCita[];
+  /**
+   * Adherencia al tratamiento indicado por el médico, en la fase 6.
+   * PAN no receta: solo registra cómo va lo que ya se indicó.
+   */
+  tratamiento?: {
+    tomando: boolean;
+    /** Qué lo impidió, cuando no se está siguiendo. */
+    motivo?: string;
+    actualizadoEn: string;
+  };
   child: ChildData;
   location: LocationData;
   insurance: InsuranceType;

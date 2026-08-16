@@ -376,10 +376,11 @@ export const FamiliasView: React.FC<FamiliasViewProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl sm:text-4xl font-fraunces font-bold text-[#2E2A33] mb-1.5 tracking-tight">
-            Para familias
+            Información para familias
           </h1>
           <p className="text-[#6E6A75] text-base sm:text-lg">
-            Orientación y respuestas con base en normas peruanas y guías oficiales verificadas.
+            Biblioteca de temas y un asistente de IA para orientarte, con fuentes
+            verificadas a la vista.
           </p>
         </div>
 
@@ -535,20 +536,43 @@ export const FamiliasView: React.FC<FamiliasViewProps> = ({
           </div>
           <div className="max-w-md mx-auto space-y-2">
             <h2 className="text-xl sm:text-2xl font-fraunces font-bold text-[#2E2A33]">
-              Asistente de orientación para familias
+              Asistente de IA para la orientación de las familias
             </h2>
             <p className="text-sm text-[#6E6A75] leading-relaxed">
-              Aquí podrás hacer preguntas sobre el autismo cuando cuentes con una orientación profesional. Por ahora, completa tu orientación inicial para habilitar el asistente clínico.
+              Responde tus dudas usando únicamente documentos verificados, y te muestra de
+              dónde sacó cada respuesta. En la ruta real se habilita cuando registras el
+              diagnóstico tras la cita.
             </p>
           </div>
-          <div className="pt-2">
+
+          {/* Acceso directo para quien está evaluando el prototipo.
+              Antes el interruptor de modo demo vivía arriba, en una esquina, y
+              quien llegaba aquí solo veía una puerta cerrada sin forma obvia de
+              abrirla. La invitación va donde está el bloqueo. */}
+          <div className="max-w-md mx-auto bg-[#F4EFFB] border border-[#D5CCE0] rounded-2xl p-5 space-y-3 text-left">
+            <p className="text-[13.5px] text-[#2E2A33] leading-relaxed">
+              <strong className="font-semibold">¿Quieres buscar información ahora?</strong>{' '}
+              Activa el <strong className="font-semibold">modo demostración</strong> y prueba
+              el asistente sin recorrer toda la ruta.
+            </p>
+            <button
+              type="button"
+              onClick={() => setModoDemo(true)}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#6B3FA0] hover:bg-[#4A2270] text-white text-sm font-bold rounded-xl transition-all shadow-xs cursor-pointer"
+            >
+              <FlaskConical className="w-4 h-4" />
+              <span>Usar la IA en modo demostración</span>
+            </button>
+          </div>
+
+          <div className="pt-1">
             <button
               type="button"
               onClick={() => onNavigate?.('evaluaciones')}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-[#4A2270] hover:bg-[#381559] text-white text-sm font-bold rounded-xl transition-all shadow-xs hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+              className="inline-flex items-center gap-2 text-[13px] font-semibold text-[#4A2270] hover:underline cursor-pointer"
             >
-              <span>Hacer la orientación inicial</span>
-              <ArrowRight className="w-4 h-4" />
+              <span>O empieza por la orientación inicial</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>

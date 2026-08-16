@@ -4,9 +4,9 @@ import { StepProgress } from '../components/StepProgress';
 import { AvatarIcon, AVATAR_LIST } from '../components/Avatars';
 import { CustomSelect } from '../components/CustomSelect';
 import { AvatarId, ChildData } from '../types';
-import { MONTHS, YEARS } from '../constants/data';
+import { DAYS, MONTHS, YEARS } from '../constants/data';
 import { motion } from 'motion/react';
-import { Calendar, Sparkles, AlertCircle } from 'lucide-react';
+import { Calendar, Sparkles, AlertCircle, Info } from 'lucide-react';
 import { calcularEdadMeses, parseMesTextoANumero } from '../utils/age';
 
 interface RegisterStep1Props {
@@ -21,8 +21,9 @@ export const RegisterStep1: React.FC<RegisterStep1Props> = ({
   onGoToLogin,
 }) => {
   const [nickname, setNickname] = useState(initialData.nickname || '');
-  const [birthMonth, setBirthMonth] = useState(initialData.birthMonth || 'Diciembre');
-  const [birthYear, setBirthYear] = useState(initialData.birthYear || '2024');
+  const [birthDay, setBirthDay] = useState(initialData.birthDay || '');
+  const [birthMonth, setBirthMonth] = useState(initialData.birthMonth || '');
+  const [birthYear, setBirthYear] = useState(initialData.birthYear || '');
   const [avatarId, setAvatarId] = useState<AvatarId>(initialData.avatarId || 'cat');
 
   // Validations
@@ -54,9 +55,14 @@ export const RegisterStep1: React.FC<RegisterStep1Props> = ({
     nicknameError = 'El apodo debe tener como máximo 20 caracteres.';
   }
 
+  // El nombre del niño deja de ser opcional: la aplicación lo usa en cada
+  // pantalla ("la ruta de Luciana", "acompañar a Luciana"), y sin él todos esos
+  // textos caen a "tu hijo/a", que suena a formulario y no a acompañamiento.
   const isValid =
+    nickname.trim().length > 0 &&
     !hasDigitsInNickname &&
     !isNicknameTooLong &&
+    !!birthDay &&
     numMonth >= 1 &&
     numMonth <= 12 &&
     numYear >= currentYear - 12 &&
@@ -70,6 +76,7 @@ export const RegisterStep1: React.FC<RegisterStep1Props> = ({
 
     onNext({
       nickname: nickname.trim(),
+      birthDay,
       birthMonth,
       birthYear,
       avatarId,
@@ -95,10 +102,10 @@ export const RegisterStep1: React.FC<RegisterStep1Props> = ({
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Nickname */}
+          {/* Nombre del niño o niña */}
           <div>
             <label className="block text-[14px] font-semibold text-[#2E2A33] mb-2">
-              Apodo o nombre de pila (opcional, máximo 20 caracteres)
+              ¿Cómo se llama tu hijo o hija? (máximo 20 caracteres)
             </label>
             <input
               type="text"
@@ -117,21 +124,30 @@ export const RegisterStep1: React.FC<RegisterStep1Props> = ({
               </p>
             ) : (
               <p className="mt-2 text-[13px] text-[#6E6A75]">
-                Solo para que la orientación sea personalizada. Puedes dejarlo en blanco.
+                Puede ser su apodo o su nombre de pila. Lo usaremos en toda la app para
+                acompañarte hablando de él o ella por su nombre.
               </p>
             )}
           </div>
 
-          {/* Birth Month and Year */}
+          {/* Fecha de nacimiento completa: el día importa porque la edad en
+              meses decide si el M-CHAT-R/F es aplicable (16 a 30 meses). */}
           <div>
             <div className="flex items-center gap-1.5 mb-2">
               <Calendar className="w-4 h-4 text-[#4A2270]" />
               <label className="block text-[14px] font-semibold text-[#2E2A33]">
-                Mes y año de nacimiento
+                Fecha de nacimiento
               </label>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
+              <CustomSelect
+                value={birthDay}
+                onChange={setBirthDay}
+                options={DAYS}
+                placeholder="Día"
+              />
+
               <CustomSelect
                 value={birthMonth}
                 onChange={setBirthMonth}
@@ -162,6 +178,20 @@ export const RegisterStep1: React.FC<RegisterStep1Props> = ({
                 <span>Tiene aproximadamente {totalAgeMonths} meses de edad</span>
               </motion.div>
             ) : null}
+
+            {/* Nota para quien evalúa el prototipo: fuera de 16 a 30 meses el
+                M-CHAT-R/F no es aplicable y el cuestionario queda bloqueado,
+                así que no se puede recorrer la ruta completa. */}
+            <div className="mt-3 flex items-start gap-2 text-[12.5px] text-[#6E6A75] leading-relaxed">
+              <Info className="w-3.5 h-3.5 text-[#6B3FA0] shrink-0 mt-0.5" />
+              <span>
+                El tamizaje M-CHAT-R/F está validado para{' '}
+                <strong className="text-[#2E2A33]">16 a 30 meses</strong>. Si estás
+                probando la plataforma, elige una fecha que dé entre{' '}
+                <strong className="text-[#2E2A33]">20 y 30 meses</strong> para poder
+                recorrer la evaluación completa.
+              </span>
+            </div>
           </div>
 
           {/* Choose Avatar */}

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Logo } from '../components/Logo';
 import { StepProgress } from '../components/StepProgress';
 import { InsuranceType } from '../types';
-import { Heart, Building2, Shield, HelpCircle, Check, ArrowRight } from 'lucide-react';
+import { Heart, Building2, Shield, HelpCircle, Check, ArrowRight, Search, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface RegisterStep3Props {
@@ -47,8 +47,8 @@ export const RegisterStep3: React.FC<RegisterStep3Props> = ({
     },
     {
       id: 'none',
-      title: 'No tenemos seguro / No estoy seguro',
-      description: 'Te orientamos paso a paso para afiliarte gratis al SIS.',
+      title: 'No estoy seguro',
+      description: 'No pasa nada. Abajo puedes consultarlo, y te orientamos para afiliarte gratis al SIS.',
       icon: <HelpCircle className="w-5 h-5 text-[#4A2270]" />,
     },
   ];
@@ -77,6 +77,56 @@ export const RegisterStep3: React.FC<RegisterStep3Props> = ({
         <h2 className="text-[28px] sm:text-[32px] font-fraunces font-bold text-[#2E2A33] mb-8">
           ¿Qué seguro tienen?
         </h2>
+
+        {/* Consultar el seguro antes de elegir.
+            Mucha gente no sabe de qué seguro es, y obligarla a adivinar la
+            manda por una ruta equivocada. Los dos enlaces son los consultores
+            oficiales, así que se puede resolver sin salir del registro. */}
+        <div className="mb-7 bg-[#FAF8FD] border border-[#E5E1EC] rounded-2xl p-5 space-y-3">
+          <h3 className="text-[14px] font-bold text-[#2E2A33] flex items-center gap-2">
+            <Search className="w-4 h-4 text-[#4A2270]" />
+            <span>¿No sabes qué seguro tienes? Averígualo aquí</span>
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <a
+              href="https://app.sis.gob.pe/SisConsultaEnLinea/ConsultaAfiliado"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-between gap-2 px-4 py-3 rounded-xl bg-white border border-[#E5E1EC] hover:border-[#4A2270] transition-all cursor-pointer group"
+            >
+              <span className="min-w-0">
+                <span className="block text-[13.5px] font-bold text-[#2E2A33]">
+                  Consultar el SIS
+                </span>
+                <span className="block text-[11.5px] text-[#6E6A75]">
+                  Con tu DNI, en sis.gob.pe
+                </span>
+              </span>
+              <ExternalLink className="w-4 h-4 text-[#4A2270] shrink-0 group-hover:scale-110 transition-transform" />
+            </a>
+
+            <a
+              href="https://www.essalud.gob.pe/acreditacion/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-between gap-2 px-4 py-3 rounded-xl bg-white border border-[#E5E1EC] hover:border-[#4A2270] transition-all cursor-pointer group"
+            >
+              <span className="min-w-0">
+                <span className="block text-[13.5px] font-bold text-[#2E2A33]">
+                  Consultar EsSalud
+                </span>
+                <span className="block text-[11.5px] text-[#6E6A75]">
+                  Acreditación en essalud.gob.pe
+                </span>
+              </span>
+              <ExternalLink className="w-4 h-4 text-[#4A2270] shrink-0 group-hover:scale-110 transition-transform" />
+            </a>
+          </div>
+          <p className="text-[12px] text-[#6E6A75] leading-relaxed">
+            Se abren en otra pestaña. Puedes volver aquí y continuar sin perder lo que ya
+            registraste.
+          </p>
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
