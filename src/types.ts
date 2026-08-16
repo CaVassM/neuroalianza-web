@@ -67,7 +67,7 @@ export interface CaseLogItem {
   fecha: string;
   titulo: string;
   detalle: string;
-  tipo: 'tamizaje' | 'establecimiento' | 'diagnostico' | 'barrera' | 'fase_update';
+  tipo: 'tamizaje' | 'establecimiento' | 'diagnostico' | 'barrera' | 'cita' | 'fase_update';
   origen?: 'familia' | 'profesional';
   establecimientoNombre?: string;
   faseNum?: CasePhase;
@@ -129,7 +129,13 @@ export interface UserProfile {
   activeBarrierFilter?: 'sin_cupos' | 'muy_lejos' | 'costo' | 'no_atendieron' | null;
 }
 
-export type CategoriaEstablecimiento = 'I-1' | 'I-2' | 'I-3' | 'I-4' | 'II-1' | 'II-2' | 'III-1' | 'III-2';
+// II-E y III-E son las categorías "especializadas" del padrón: existen de
+// verdad en RENIPRESS (institutos, clínicas monográficas) y sin ellas se caían
+// 127 establecimientos de Lima.
+export type CategoriaEstablecimiento =
+  | 'I-1' | 'I-2' | 'I-3' | 'I-4'
+  | 'II-1' | 'II-2' | 'II-E'
+  | 'III-1' | 'III-2' | 'III-E';
 export type InstitucionEstablecimiento = 'GOBIERNO REGIONAL' | 'MINSA' | 'ESSALUD' | 'PRIVADO';
 export type CoberturaEstablecimiento = 'SIS' | 'EsSalud' | 'Privado';
 
@@ -149,6 +155,12 @@ export interface Establecimiento {
   lng: number;
   cobertura: CoberturaEstablecimiento;
   servicios: string[];
+  /**
+   * true cuando los servicios se dedujeron de la categoría y no se comprobaron
+   * en ese establecimiento. RENIPRESS no registra la cartera de servicios, así
+   * que la ficha tiene que advertirlo antes de que alguien viaje hasta allí.
+   */
+  serviciosInferidos?: boolean;
   fuente: string;
   fechaVerificacion: string;
   distanciaKm?: number;

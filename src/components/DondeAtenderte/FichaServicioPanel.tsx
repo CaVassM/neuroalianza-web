@@ -265,28 +265,50 @@ export const FichaServicioPanel: React.FC<FichaServicioPanelProps> = ({
                   </p>
                 </div>
 
+                {/* Teléfono y horario vienen escritos a mano en el registro y
+                    no siempre están, o llegan cortados. Cuando falta el dato se
+                    dice que falta: un teléfono a medias hace perder la llamada,
+                    y un horario inventado, el viaje. */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <a
-                    href={`tel:${item.telefono.replace(/[^\d+]/g, '')}`}
-                    className="p-4 rounded-xl bg-[#FAF8FD] border border-[#E5E1EC] hover:border-[#4A2270] transition-all space-y-1.5 block"
-                  >
-                    <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#4A2270]">
-                      <Phone className="w-3.5 h-3.5" />
-                      <span>Llamar</span>
+                  {item.telefono ? (
+                    <a
+                      href={`tel:${item.telefono.replace(/[^\d+]/g, '')}`}
+                      className="p-4 rounded-xl bg-[#FAF8FD] border border-[#E5E1EC] hover:border-[#4A2270] transition-all space-y-1.5 block"
+                    >
+                      <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#4A2270]">
+                        <Phone className="w-3.5 h-3.5" />
+                        <span>Llamar</span>
+                      </div>
+                      <span className="text-[13.5px] font-bold text-[#4A2270] block truncate">
+                        {item.telefono}
+                      </span>
+                    </a>
+                  ) : (
+                    <div className="p-4 rounded-xl bg-[#F7F5FA] border border-[#E5E1EC] space-y-1.5">
+                      <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#8A8594]">
+                        <Phone className="w-3.5 h-3.5" />
+                        <span>Llamar</span>
+                      </div>
+                      <span className="text-[12.5px] text-[#6E6A75] block leading-snug">
+                        El registro público no trae teléfono de este establecimiento.
+                      </span>
                     </div>
-                    <span className="text-[13.5px] font-bold text-[#4A2270] block truncate">
-                      {item.telefono}
-                    </span>
-                  </a>
+                  )}
 
                   <div className="p-4 rounded-xl bg-[#FAF8FD] border border-[#E5E1EC] space-y-1.5">
                     <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#4A2270]">
                       <Clock className="w-3.5 h-3.5" />
                       <span>Atención presencial</span>
                     </div>
-                    <p className="text-[13.5px] font-semibold text-[#2E2A33] leading-snug">
-                      {item.horario}
-                    </p>
+                    {item.horario ? (
+                      <p className="text-[13.5px] font-semibold text-[#2E2A33] leading-snug">
+                        {item.horario}
+                      </p>
+                    ) : (
+                      <p className="text-[12.5px] text-[#6E6A75] leading-snug">
+                        Horario no registrado. Confírmalo antes de ir.
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -345,6 +367,19 @@ export const FichaServicioPanel: React.FC<FichaServicioPanelProps> = ({
                     </div>
                   ))}
                 </div>
+
+                {/* RENIPRESS registra la categoría, no la cartera de servicios.
+                    Lo que se lista arriba es lo que a esa categoría le toca
+                    ofrecer según la norma, no lo que se comprobó aquí. Decirlo
+                    evita que una familia viaje contando con algo que quizá no
+                    esté ese día. */}
+                {item.serviciosInferidos && (
+                  <p className="text-[11.5px] text-[#8A8594] italic leading-relaxed">
+                    Estimado a partir de su categoría ({item.categoria}): es lo que un
+                    establecimiento de este nivel debe ofrecer. No está verificado uno por
+                    uno, así que confirma al llamar que atienden lo que buscas.
+                  </p>
+                )}
               </div>
 
               {/* 5. "¿Qué seguro atiende?" con nota literal en gris pequeño */}

@@ -1,8 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Tooltip, Circle, useMap } from 'react-leaflet';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { MapContainer, TileLayer, Marker, Tooltip, Circle, Polygon, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import { Establecimiento } from '../../types';
+import { TerritorioAproximado } from '../../utils/territorios';
 import { formatDistancia } from '../../utils/distancia';
 import { ChevronRight, X, Sparkles, MapPin } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -14,9 +15,28 @@ interface MapComponentProps {
   selectedId: string | null;
   onSelectEstablecimiento: (item: Establecimiento) => void;
   onOpenFicha: (item: Establecimiento) => void;
-  /** Radio de búsqueda en km. Se dibuja alrededor de la ubicación de la familia. */
-  radioKm?: number;
+  /** Avisa de qué establecimiento tiene el cursor encima, para pintar su zona. */
+  onHoverEstablecimiento?: (codigo: string | null) => void;
+  /**
+   * Radio en km del filtro por distancia activo. Solo se dibuja cuando hay un
+   * filtro que de verdad recorta por distancia; un círculo permanente alrededor
+   * de la familia sugería un alcance que no existe.
+   */
+  radioKm?: number | null;
+  /** Zona que cubre a la familia, si hay alguna. Se muestra siempre. */
+  zonaPropia?: TerritorioAproximado | null;
+  /**
+   * Zona del establecimiento que tiene el cursor encima. Aparece solo mientras
+   * dura el hover: pintar las 650 a la vez era imposible de leer.
+   */
+  zonaResaltada?: TerritorioAproximado | null;
+  /** true cuando la zona resaltada NO es la que cubre a la familia. */
+  resaltadaEsAjena?: boolean;
+  mostrarTerritorios?: boolean;
 }
+
+const VERDE_PROPIA = '#2E7D5B';
+const AMBAR_AJENA = '#C77700';
 
 // Controller component to handle panning, fitBounds & size invalidation
 const MapController: React.FC<{
@@ -54,9 +74,12 @@ const MapController: React.FC<{
       return;
     }
 
+    // Solo los más cercanos entran en el encuadre. Con el padrón completo
+    // cargado, abarcar todos los establecimientos significaba abrir el mapa
+    // desde Ancón hasta Pucusana: la familia no distinguía ni su calle.
     const bounds = L.latLngBounds([
       [userLocation.lat, userLocation.lng],
-      ...items.map((item) => [item.lat, item.lng] as [number, number]),
+      ...items.slice(0, 8).map((item) => [item.lat, item.lng] as [number, number]),
     ]);
 
     map.fitBounds(bounds, {
@@ -76,7 +99,12 @@ export const MapComponent: React.FC<MapComponentProps> = ({
   selectedId,
   onSelectEstablecimiento,
   onOpenFicha,
-  radioKm = 2,
+  onHoverEstablecimiento,
+  radioKm = null,
+  zonaPropia = null,
+  zonaResaltada = null,
+  resaltadaEsAjena = false,
+  mostrarTerritorios = true,
 }) => {
   const [mobileActiveItem, setMobileActiveItem] = useState<Establecimiento | null>(null);
 
@@ -85,8 +113,21 @@ export const MapComponent: React.FC<MapComponentProps> = ({
     return items.find((i) => i.codigo === selectedId) || null;
   }, [items, selectedId]);
 
-  // Custom marker pin generator
+  /**
+   * Los iconos se reutilizan entre marcadores.
+   *
+   * Solo hay unas pocas combinaciones posibles de categoría y estado, y un
+   * divIcon de Leaflet no guarda nada del marcador al que pertenece. Sin esta
+   * caché, cada movimiento del cursor reconstruía los cientos de iconos del
+   * mapa y react-leaflet los reasignaba todos porque el objeto era nuevo.
+   */
+  const cacheIconos = useRef(new Map<string, L.DivIcon>());
+
   const createPinIcon = (cat: string, isHovered: boolean, isSelected: boolean) => {
+    const clave = `${cat}|${isHovered}|${isSelected}`;
+    const guardado = cacheIconos.current.get(clave);
+    if (guardado) return guardado;
+
     let color = '#6B3FA0'; // I-1 to I-4
     if (cat.startsWith('II-')) color = '#4A2270';
     else if (cat.startsWith('III-')) color = '#2E1A47';
@@ -105,7 +146,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
       </div>
     `;
 
-    return L.divIcon({
+    const icono = L.divIcon({
       html,
       className: 'custom-leaflet-marker-pin',
       iconSize: [36, 44],
@@ -113,6 +154,9 @@ export const MapComponent: React.FC<MapComponentProps> = ({
       tooltipAnchor: [0, -42],
       popupAnchor: [0, -44],
     });
+
+    cacheIconos.current.set(clave, icono);
+    return icono;
   };
 
   // User location marker pin
@@ -168,22 +212,58 @@ export const MapComponent: React.FC<MapComponentProps> = ({
           selectedItem={selectedItem}
         />
 
-        {/* User location marker */}
-        {/* Radio de búsqueda. Va ANTES de los marcadores para quedar por
-            debajo de ellos, y sin relleno opaco para no tapar el mapa. */}
-        <Circle
-          center={[userLocation.lat, userLocation.lng]}
-          radius={radioKm * 1000}
-          pathOptions={{
-            color: '#4A2270',
-            weight: 1.5,
-            opacity: 0.55,
-            fillColor: '#6B3FA0',
-            fillOpacity: 0.07,
-            dashArray: '6 6',
-          }}
-          interactive={false}
-        />
+        {/* Zonas de atención. Van ANTES de los marcadores para quedar por
+            debajo de ellos, y con relleno tenue para no tapar las calles: la
+            familia tiene que poder reconocer su dirección dentro de la zona.
+
+            Solo se pintan dos como mucho: la que cubre a la familia, y la del
+            establecimiento que tenga el cursor encima. Dibujar todas a la vez
+            llenaba el mapa de parches y no se entendía ninguno. */}
+        {mostrarTerritorios && zonaPropia && zonaPropia.codigo !== zonaResaltada?.codigo && (
+          <Polygon
+            positions={zonaPropia.poligono}
+            pathOptions={{
+              color: VERDE_PROPIA,
+              weight: 2,
+              opacity: 0.75,
+              fillColor: VERDE_PROPIA,
+              fillOpacity: 0.12,
+            }}
+            interactive={false}
+          />
+        )}
+
+        {mostrarTerritorios && zonaResaltada && (
+          <Polygon
+            positions={zonaResaltada.poligono}
+            pathOptions={{
+              color: resaltadaEsAjena ? AMBAR_AJENA : VERDE_PROPIA,
+              weight: 2.5,
+              opacity: 0.95,
+              fillColor: resaltadaEsAjena ? AMBAR_AJENA : VERDE_PROPIA,
+              fillOpacity: 0.2,
+              dashArray: resaltadaEsAjena ? '5 5' : undefined,
+            }}
+            interactive={false}
+          />
+        )}
+
+        {/* Radio del filtro por distancia, solo si hay uno activo. */}
+        {radioKm !== null && (
+          <Circle
+            center={[userLocation.lat, userLocation.lng]}
+            radius={radioKm * 1000}
+            pathOptions={{
+              color: '#4A2270',
+              weight: 1.5,
+              opacity: 0.55,
+              fillColor: '#6B3FA0',
+              fillOpacity: 0.05,
+              dashArray: '6 6',
+            }}
+            interactive={false}
+          />
+        )}
 
         <Marker
           position={[userLocation.lat, userLocation.lng]}
@@ -227,6 +307,9 @@ export const MapComponent: React.FC<MapComponentProps> = ({
                       setMobileActiveItem(item);
                     }
                   },
+                  // El hover es lo que destapa la zona de este establecimiento.
+                  mouseover: () => onHoverEstablecimiento?.(item.codigo),
+                  mouseout: () => onHoverEstablecimiento?.(null),
                 }}
               >
                 {/* Clear, high-contrast hover Tooltip */}
@@ -258,6 +341,28 @@ export const MapComponent: React.FC<MapComponentProps> = ({
                         {item.clasificacion} · {item.distrito}
                       </p>
                     </div>
+
+                    {/* Qué significa la mancha que acaba de aparecer.
+                        Sin esta línea, ver el polígono encenderse no dice si
+                        a esa familia le toca ese sitio o no. */}
+                    {zonaResaltada?.codigo === item.codigo && (
+                      <div
+                        className={`px-2 py-1.5 rounded-lg text-[11px] leading-snug ${
+                          resaltadaEsAjena
+                            ? 'bg-[#FDF1DF] text-[#C77700]'
+                            : 'bg-[#E6F2EC] text-[#2E7D5B]'
+                        }`}
+                      >
+                        <strong>
+                          {resaltadaEsAjena
+                            ? 'No estás en esta zona.'
+                            : 'Estás dentro de esta zona.'}
+                        </strong>{' '}
+                        {resaltadaEsAjena
+                          ? 'Puedes ir igual, pero confirma por teléfono si te corresponde.'
+                          : 'Es la que te correspondería según la estimación.'}
+                      </div>
+                    )}
 
                     <div className="pt-1.5 border-t border-[#F0EDF5] flex items-center justify-between text-[11px]">
                       <span className="text-[#6B3FA0] font-semibold flex items-center gap-1">

@@ -2,6 +2,12 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { UserProfile, Establecimiento, InsuranceType } from '../../types';
 import rawEstablecimientos from '../../data/establecimientos.json';
 import { haversineKm, getDistrictCoordinates, formatDistancia } from '../../utils/distancia';
+import {
+  calcularTerritorio,
+  establecimientoDeZona,
+  esPrimerNivel,
+  RADIO_MAX_KM,
+} from '../../utils/territorios';
 import { MapComponent } from './MapComponent';
 import { EstablishmentCard } from './EstablishmentCard';
 import { FichaServicioPanel } from './FichaServicioPanel';
@@ -18,7 +24,9 @@ import {
   PhoneCall,
   ExternalLink,
   MessageCircle,
-  Info
+  Info,
+  Layers,
+  ChevronDown
 } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -32,6 +40,18 @@ interface DondeAtenderteSectionProps {
 type CoberturaFilter = 'TODOS' | 'SIS' | 'EsSalud' | 'Privado';
 type NivelFilter = 'TODOS' | 'PRIMER_NIVEL' | 'HOSPITAL';
 type MobileSheetPosition = 'collapsed' | 'medium' | 'expanded';
+
+/**
+ * Topes de lo que se dibuja y se lista.
+ *
+ * El padrón trae 650 establecimientos de Lima y Callao. Todos entran en los
+ * cálculos —la distancia, el más cercano, la zona que cubre a la familia— pero
+ * volcarlos enteros en pantalla no ayuda a nadie: quien busca dónde llevar a su
+ * hijo mira su barrio, no la provincia. Y montar 650 marcadores con su ficha
+ * flotante deja el mapa pesado al arrastrarlo.
+ */
+const MAXIMO_EN_MAPA = 120;
+const MAXIMO_EN_LISTA = 25;
 
 export const DondeAtenderteSection: React.FC<DondeAtenderteSectionProps> = ({
   user,
@@ -85,6 +105,11 @@ export const DondeAtenderteSection: React.FC<DondeAtenderteSectionProps> = ({
   );
   const [nivelFilter, setNivelFilter] = useState<NivelFilter>('TODOS');
   const [mobileSheetPos, setMobileSheetPos] = useState<MobileSheetPosition>('medium');
+
+  const [mostrarTerritorios, setMostrarTerritorios] = useState(true);
+  // La explicación del mapa arranca plegada: es de una sola lectura y ocupaba
+  // más alto que el propio mapa.
+  const [detalleMapaAbierto, setDetalleMapaAbierto] = useState(false);
 
   const [hoveredCodigo, setHoveredCodigo] = useState<string | null>(null);
   const [selectedCardCodigo, setSelectedCardCodigo] = useState<string | null>(null);
@@ -206,6 +231,18 @@ export const DondeAtenderteSection: React.FC<DondeAtenderteSectionProps> = ({
     });
   }, [processedEstablecimientos, coberturaFilter, nivelFilter, activeBarrierFilter, chosenEstablecimientoCodigo]);
 
+  // La lista llega ordenada por distancia, así que recortar por el principio
+  // es quedarse con lo más cercano.
+  const establecimientosEnMapa = useMemo(
+    () => filteredEstablecimientos.slice(0, MAXIMO_EN_MAPA),
+    [filteredEstablecimientos]
+  );
+  const establecimientosEnLista = useMemo(
+    () => filteredEstablecimientos.slice(0, MAXIMO_EN_LISTA),
+    [filteredEstablecimientos]
+  );
+  const hayMasQueMostrar = filteredEstablecimientos.length > MAXIMO_EN_LISTA;
+
   /**
    * El más cercano de los que quedan tras los filtros.
    *
@@ -219,6 +256,41 @@ export const DondeAtenderteSection: React.FC<DondeAtenderteSectionProps> = ({
       (item.distanciaKm ?? Infinity) < (masCerca.distanciaKm ?? Infinity) ? item : masCerca
     );
   }, [filteredEstablecimientos]);
+
+  /**
+   * Zonas de atención aproximadas.
+   *
+   * Se calculan sobre el conjunto COMPLETO, no sobre el filtrado: el reparto
+   * del territorio no cambia porque la familia marque un filtro de seguro, y
+   * unas fronteras que se movieran solas no significarían nada.
+   *
+   * Solo se dibujan dos: la que cubre a la familia, siempre, y la del
+   * establecimiento que tenga el cursor encima, mientras dure el hover. Con 650
+   * establecimientos cargados, pintarlas todas dejaba el mapa ilegible.
+   */
+  const establecimientoPropio = useMemo(
+    () => establecimientoDeZona([userLocation.lat, userLocation.lng], processedEstablecimientos),
+    [userLocation.lat, userLocation.lng, processedEstablecimientos]
+  );
+
+  const zonaPropia = useMemo(
+    () =>
+      establecimientoPropio
+        ? calcularTerritorio(establecimientoPropio, processedEstablecimientos)
+        : null,
+    [establecimientoPropio, processedEstablecimientos]
+  );
+
+  const zonaResaltada = useMemo(() => {
+    if (!hoveredCodigo) return null;
+    const item = processedEstablecimientos.find((e) => e.codigo === hoveredCodigo);
+    // Los hospitales no tienen sector: se llega por referencia, no por dirección.
+    if (!item || !esPrimerNivel(item)) return null;
+    return calcularTerritorio(item, processedEstablecimientos);
+  }, [hoveredCodigo, processedEstablecimientos]);
+
+  const resaltadaEsAjena =
+    !!zonaResaltada && zonaResaltada.codigo !== establecimientoPropio?.codigo;
 
   const handleOpenFicha = (item: Establecimiento) => {
     setFichaItem(item);
@@ -523,7 +595,7 @@ export const DondeAtenderteSection: React.FC<DondeAtenderteSectionProps> = ({
         {/* Map Container */}
         <div className="w-full space-y-2">
           <MapComponent
-            items={filteredEstablecimientos}
+            items={establecimientosEnMapa}
             userLocation={userLocation}
             hoveredId={hoveredCodigo}
             selectedId={selectedCardCodigo}
@@ -531,30 +603,146 @@ export const DondeAtenderteSection: React.FC<DondeAtenderteSectionProps> = ({
               setSelectedCardCodigo(item.codigo);
             }}
             onOpenFicha={handleOpenFicha}
-            // El radio dibujado tiene que coincidir con el que se está
-            // filtrando: con "sin cupos" la búsqueda se amplía a 10 km.
-            radioKm={activeBarrierFilter === 'sin_cupos' ? 10 : 2}
+            onHoverEstablecimiento={setHoveredCodigo}
+            zonaPropia={zonaPropia}
+            zonaResaltada={zonaResaltada}
+            resaltadaEsAjena={resaltadaEsAjena}
+            mostrarTerritorios={mostrarTerritorios}
+            // El radio solo se dibuja cuando hay un filtro que recorta por
+            // distancia. Sin filtro no hay ningún alcance que representar.
+            radioKm={
+              activeBarrierFilter === 'sin_cupos'
+                ? 10
+                : activeBarrierFilter === 'muy_lejos'
+                ? 2
+                : null
+            }
           />
 
-          <div className="bg-white rounded-xl border border-[#E5E1EC] px-4 py-2.5 flex items-center justify-between text-[11.5px] text-[#6E6A75] flex-wrap gap-2">
-            <div className="flex items-center gap-3 flex-wrap">
-              <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full bg-[#6B3FA0]" />
-                <span>Primer nivel (I-1 a I-4 · CRED)</span>
+          {/* Zonas de atención.
+              A la vista queda solo lo accionable: qué zona te toca y el botón
+              para verla. La explicación —de dónde sale la estimación, la
+              leyenda de colores, el aviso de confirmar por teléfono— vive
+              detrás de la flecha, porque es información de una sola lectura y
+              ocupaba más que el propio mapa.
+
+              El aviso de que es una estimación NO se pliega: va en la línea
+              verde, siempre visible. Si una familia ve su zona, va al centro
+              que le toca según el mapa y resulta que no le correspondía, la
+              mandan de vuelta. Esa frase es lo que hace aceptable dibujarlo. */}
+          <div className="bg-white rounded-xl border border-[#E5E1EC] px-4 py-3 space-y-2.5">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 min-w-0">
+                <Layers className="w-3.5 h-3.5 text-[#4A2270] shrink-0" />
+                <span className="text-[12px] font-bold text-[#2E2A33] truncate">
+                  Zonas de atención
+                </span>
+                <span className="text-[11px] text-[#8A8594] shrink-0">aproximadas</span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full bg-[#4A2270]" />
-                <span>Nivel II (Policlínicos/Hospitales)</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full bg-[#2E1A47]" />
-                <span>Nivel III (Alta especialidad)</span>
+
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setMostrarTerritorios((v) => !v)}
+                  aria-pressed={mostrarTerritorios}
+                  className={`px-3 py-1.5 rounded-xl text-[11.5px] font-bold transition-all cursor-pointer border ${
+                    mostrarTerritorios
+                      ? 'bg-[#4A2270] border-[#4A2270] text-white shadow-xs'
+                      : 'bg-[#F7F5FA] border-[#E5E1EC] text-[#6E6A75] hover:text-[#2E2A33]'
+                  }`}
+                >
+                  {mostrarTerritorios ? 'Ocultar zonas' : 'Ver zonas'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setDetalleMapaAbierto((v) => !v)}
+                  aria-expanded={detalleMapaAbierto}
+                  aria-controls="detalle-mapa"
+                  className="p-1.5 rounded-lg text-[#6E6A75] hover:bg-[#F7F5FA] hover:text-[#2E2A33] transition-colors cursor-pointer"
+                  title={detalleMapaAbierto ? 'Ocultar cómo leer el mapa' : 'Cómo leer este mapa'}
+                >
+                  <ChevronDown
+                    className={`w-4 h-4 transition-transform duration-200 ${
+                      detalleMapaAbierto ? 'rotate-180' : ''
+                    }`}
+                  />
+                </button>
               </div>
             </div>
-            <div className="flex items-center gap-1 text-[#4A2270] font-semibold">
-              <MapPin className="w-3 h-3" />
-              <span>Tu referencia</span>
-            </div>
+
+            {mostrarTerritorios && (
+              <p
+                className={`text-[11.5px] rounded-lg px-3 py-2 leading-relaxed border ${
+                  establecimientoPropio
+                    ? 'text-[#2E7D5B] bg-[#E6F2EC] border-[#C3E5D4]'
+                    : 'text-[#6E6A75] bg-[#F7F5FA] border-[#E5E1EC]'
+                }`}
+              >
+                {establecimientoPropio ? (
+                  <>
+                    Te tocaría <strong>{establecimientoPropio.nombre}</strong> (zona verde).
+                    Es una estimación: confírmalo antes de ir.
+                  </>
+                ) : (
+                  <>
+                    No hay ningún establecimiento de primer nivel a menos de {RADIO_MAX_KM} km
+                    de {userLocation.isBrowserLocation ? 'tu ubicación' : `el centro de ${district}`},
+                    así que no podemos estimar tu zona. Usa la lista de opciones cercanas.
+                  </>
+                )}
+              </p>
+            )}
+
+            {detalleMapaAbierto && (
+              <div
+                id="detalle-mapa"
+                className="space-y-3 pt-2.5 border-t border-[#F0EDF5] animate-in fade-in slide-in-from-top-1 duration-200"
+              >
+                <p className="text-[11.5px] text-[#6E6A75] leading-relaxed">
+                  En el primer nivel cada centro de salud tiene un sector asignado y te
+                  atiendes en el que cubre tu dirección.{' '}
+                  <strong className="text-[#2E2A33]">
+                    Pasa el cursor por un establecimiento del mapa
+                  </strong>{' '}
+                  para ver la suya. Lo que dibujamos es una estimación por cercanía: la
+                  delimitación oficial la aprueba tu DIRIS y no está publicada como mapa
+                  digital, así que{' '}
+                  <strong className="text-[#2E2A33]">confírmalo llamando antes de ir</strong>.
+                  Los hospitales no aparecen con zona: a ellos se llega por referencia, no
+                  por dirección.
+                </p>
+
+                <div className="flex items-center justify-between text-[11.5px] text-[#6E6A75] flex-wrap gap-2">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-3 h-3 rounded-full bg-[#6B3FA0]" />
+                      <span>Primer nivel (I-1 a I-4 · CRED)</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-3 h-3 rounded-full bg-[#4A2270]" />
+                      <span>Nivel II (Policlínicos/Hospitales)</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-3 h-3 rounded-full bg-[#2E1A47]" />
+                      <span>Nivel III (Alta especialidad)</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 text-[#4A2270] font-semibold">
+                    <MapPin className="w-3 h-3" />
+                    <span>Tu referencia</span>
+                  </div>
+                </div>
+
+                {filteredEstablecimientos.length > MAXIMO_EN_MAPA && (
+                  <p className="text-[11px] text-[#8A8594] leading-relaxed">
+                    El mapa dibuja los {MAXIMO_EN_MAPA} más cercanos de{' '}
+                    {filteredEstablecimientos.length} en Lima y Callao. Cambia de distrito o
+                    usa tu ubicación para mirar otra zona.
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -565,7 +753,10 @@ export const DondeAtenderteSection: React.FC<DondeAtenderteSectionProps> = ({
               Opciones cercanas a ti ({filteredEstablecimientos.length})
             </h3>
             <p className="text-xs text-[#6E6A75] mt-0.5">
-              {district} · {coverageDisplayLabel} · ordenadas por cercanía
+              {district} · {coverageDisplayLabel} ·{' '}
+              {hayMasQueMostrar
+                ? `las ${MAXIMO_EN_LISTA} más cercanas`
+                : 'ordenadas por cercanía'}
             </p>
           </div>
 
@@ -592,7 +783,7 @@ export const DondeAtenderteSection: React.FC<DondeAtenderteSectionProps> = ({
 
           <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1.5 custom-scrollbar">
             {filteredEstablecimientos.length > 0 ? (
-              filteredEstablecimientos.map((item) => (
+              establecimientosEnLista.map((item) => (
                 <EstablishmentCard
                   key={item.codigo}
                   item={item}
@@ -685,10 +876,14 @@ export const DondeAtenderteSection: React.FC<DondeAtenderteSectionProps> = ({
             <div className="flex items-center justify-between gap-2">
               <div>
                 <span className="text-xs font-bold text-[#4A2270]">
-                  {filteredEstablecimientos.length} establecimientos en {district}
+                  {filteredEstablecimientos.length} establecimientos cerca de {district}
                 </span>
                 <p className="text-[11px] text-[#6E6A75]">
-                  {mobileSheetPos === 'collapsed' ? 'Toca para ver lista' : 'Ordenados por distancia'}
+                  {mobileSheetPos === 'collapsed'
+                    ? 'Toca para ver lista'
+                    : hayMasQueMostrar
+                    ? `Los ${MAXIMO_EN_LISTA} más cercanos`
+                    : 'Ordenados por distancia'}
                 </p>
               </div>
 
@@ -742,7 +937,7 @@ export const DondeAtenderteSection: React.FC<DondeAtenderteSectionProps> = ({
           {mobileSheetPos !== 'collapsed' && (
             <div className="p-4 space-y-3 flex-1 overflow-y-auto custom-scrollbar">
               {filteredEstablecimientos.length > 0 ? (
-                filteredEstablecimientos.map((item) => (
+                establecimientosEnLista.map((item) => (
                   <EstablishmentCard
                     key={item.codigo}
                     item={item}

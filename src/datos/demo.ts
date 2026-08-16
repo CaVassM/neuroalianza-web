@@ -205,7 +205,10 @@ export const DEMO_CASO_1: { caso: Caso; tamizaje: Tamizaje; eventos: Evento[] } 
     seguro: 'SIS',
     condicion: 'autismo',
     faseActual: 4,
-    establecimientoId: '00003421',
+    // Códigos IPRESS reales del padrón, para que el caso de demostración
+    // encuentre su establecimiento en el mapa: 00006200 es el Centro de Salud
+    // Santa Cruz de Miraflores.
+    establecimientoId: '00006200',
     creadoEn: '2026-08-10T10:00:00.000Z',
     actualizadoEn: '2026-08-14T15:30:00.000Z',
   },
@@ -313,7 +316,7 @@ export const DEMO_CASO_3: { caso: Caso; tamizaje: null; eventos: Evento[] } = {
     seguro: 'EsSalud',
     condicion: 'autismo',
     faseActual: 5,
-    establecimientoId: '00003425',
+    establecimientoId: '00005993', // Centro de Salud Santiago de Surco
     creadoEn: '2026-08-01T09:00:00.000Z',
     actualizadoEn: '2026-08-13T16:00:00.000Z',
   },

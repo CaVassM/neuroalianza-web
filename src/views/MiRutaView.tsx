@@ -73,6 +73,21 @@ export const MiRutaView: React.FC<MiRutaViewProps> = ({ user, onUpdateUser, onNa
     user.screeningResult || user.diagnosis || (user.fase && user.fase >= 2)
   );
 
+  /**
+   * El Plan B necesita un intento concreto detrás.
+   *
+   * Las cuatro barreras hablan de algo que ya se probó: "no había cupos",
+   * "queda muy lejos", "no me atendieron". Sin un establecimiento elegido ni
+   * una cita registrada, no hay a qué referirlas, y dos de los filtros que
+   * disparan —"sin cupos" y "no me atendieron"— trabajan excluyendo justamente
+   * el establecimiento elegido: sin él no excluían nada y la ruta quedaba
+   * marcada con una barrera que no correspondía a ninguna gestión.
+   */
+  const yaIntentoAtenderse = Boolean(
+    user.selectedEstablecimientoCodigo ||
+      (user.registros || []).some((r) => r.tipo === 'cita')
+  );
+
   const handleSaveDiagnosis = (e: React.FormEvent) => {
     e.preventDefault();
     if (onUpdateUser) {
@@ -700,21 +715,40 @@ export const MiRutaView: React.FC<MiRutaViewProps> = ({ user, onUpdateUser, onNa
               ¿No pudiste avanzar?
             </h3>
             <p className="text-xs sm:text-sm text-[#6E6A75] leading-relaxed">
-              Cuéntanos qué pasó y buscamos otra opción contigo.
+              {yaIntentoAtenderse
+                ? 'Cuéntanos qué pasó y buscamos otra opción contigo.'
+                : 'Cuando elijas dónde atenderte o registres tu primera cita, aquí podrás contarnos qué te frenó.'}
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={() => {
-              setSelectedBarrier(null);
-              setShowBarrierModal(true);
-            }}
-            className="px-5 py-3 bg-[#FDF1DF] hover:bg-[#FCE7C8] text-[#C77700] border border-[#F6DCB6] hover:border-[#C77700] text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 shrink-0 shadow-2xs"
-          >
-            <AlertTriangle className="w-4 h-4" />
-            <span>Reportar una barrera</span>
-          </button>
+          {/* Sin una gestión detrás no hay barrera que reportar, así que el
+              botón lleva a hacerla en vez de quedarse muerto. */}
+          {yaIntentoAtenderse ? (
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedBarrier(null);
+                setShowBarrierModal(true);
+              }}
+              className="px-5 py-3 bg-[#FDF1DF] hover:bg-[#FCE7C8] text-[#C77700] border border-[#F6DCB6] hover:border-[#C77700] text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 shrink-0 shadow-2xs"
+            >
+              <AlertTriangle className="w-4 h-4" />
+              <span>Reportar una barrera</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() =>
+                document
+                  .getElementById('seccion-donde-atenderte')
+                  ?.scrollIntoView({ behavior: 'smooth' })
+              }
+              className="px-5 py-3 bg-white hover:bg-[#FAF8FD] text-[#4A2270] border border-[#E5E1EC] hover:border-[#4A2270] text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 shrink-0 shadow-2xs"
+            >
+              <MapPin className="w-4 h-4" />
+              <span>Elegir dónde atenderme</span>
+            </button>
+          )}
         </div>
 
         {user.barrierReport && (

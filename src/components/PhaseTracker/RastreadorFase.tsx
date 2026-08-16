@@ -50,7 +50,9 @@ export const RastreadorFase: React.FC<RastreadorFaseProps> = ({ user, onUpdateUs
       ]
         .filter(Boolean)
         .join(' '),
-      tipo: 'fase_update',
+      // Marcado como 'cita' y no como avance genérico: haber ido a una cita es
+      // lo que habilita reportar una barrera, y hacía falta poder distinguirlo.
+      tipo: 'cita',
       origen: 'familia',
       faseNum: (avanzaA || currentPhase) as CasePhase,
     };
