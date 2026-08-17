@@ -21,6 +21,7 @@ import { dirname, resolve } from 'node:path';
 
 const AQUI = dirname(fileURLToPath(import.meta.url));
 const SALIDA = resolve(AQUI, '../src/data/establecimientos.json');
+const SALIDA_CENTROS = resolve(AQUI, '../src/data/centrosDistrito.json');
 
 const FUENTE = 'RENIPRESS - SUSALUD (corte 31/07/2026)';
 const FECHA_CORTE = '2026-07-31';
@@ -303,6 +304,46 @@ function serviciosDe(categoria) {
   return base;
 }
 
+/**
+ * Centro de cada distrito, para situar el mapa cuando la familia no usa GPS.
+ *
+ * Se emite aparte en vez de calcularlo en la aplicación: importar el padrón
+ * entero desde una utilidad de bajo nivel obligaba a TypeScript a inferir el
+ * tipo literal de los 650 registros en cada componente que la usaba, y el
+ * chequeo de tipos acababa agotando la memoria. Cincuenta filas no molestan a
+ * nadie, y de paso los centros quedan a la vista en el repositorio.
+ *
+ * Se usa la mediana y no la media: distritos como Ate, Lurigancho o San Juan de
+ * Lurigancho se estiran más de veinte kilómetros, con casi todo apiñado en la
+ * parte urbana y unos pocos establecimientos sueltos en la quebrada, y la media
+ * arrastraba el centro hacia el cerro.
+ */
+function centrosDistrito(establecimientos) {
+  const mediana = (valores) => {
+    const orden = [...valores].sort((a, b) => a - b);
+    const medio = orden.length >> 1;
+    return orden.length % 2 ? orden[medio] : (orden[medio - 1] + orden[medio]) / 2;
+  };
+
+  const porDistrito = new Map();
+  for (const e of establecimientos) {
+    const acumulado = porDistrito.get(e.distrito) ?? { lat: [], lng: [] };
+    acumulado.lat.push(e.lat);
+    acumulado.lng.push(e.lng);
+    porDistrito.set(e.distrito, acumulado);
+  }
+
+  return [...porDistrito]
+    .map(([distrito, { lat, lng }]) => ({
+      distrito,
+      clave: sinTildes(distrito),
+      lat: Number(mediana(lat).toFixed(6)),
+      lng: Number(mediana(lng).toFixed(6)),
+      establecimientos: lat.length,
+    }))
+    .sort((a, b) => a.distrito.localeCompare(b.distrito, 'es'));
+}
+
 // ---------------------------------------------------------------------------
 
 function main() {
@@ -368,6 +409,8 @@ function main() {
 
   salida.sort((a, b) => a.distrito.localeCompare(b.distrito, 'es') || a.nombre.localeCompare(b.nombre, 'es'));
   writeFileSync(SALIDA, JSON.stringify(salida, null, 2) + '\n', 'utf8');
+
+  writeFileSync(SALIDA_CENTROS, JSON.stringify(centrosDistrito(salida), null, 2) + '\n', 'utf8');
 
   const cuenta = (clave) => {
     const m = new Map();

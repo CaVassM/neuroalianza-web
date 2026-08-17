@@ -1,0 +1,352 @@
+[
+  {
+    "distrito": "Ancón",
+    "clave": "ANCON",
+    "lat": -11.77638,
+    "lng": -77.15427,
+    "establecimientos": 4
+  },
+  {
+    "distrito": "Ate",
+    "clave": "ATE",
+    "lat": -12.028254,
+    "lng": -76.910379,
+    "establecimientos": 30
+  },
+  {
+    "distrito": "Barranco",
+    "clave": "BARRANCO",
+    "lat": -12.150468,
+    "lng": -77.020492,
+    "establecimientos": 3
+  },
+  {
+    "distrito": "Bellavista",
+    "clave": "BELLAVISTA",
+    "lat": -12.061542,
+    "lng": -77.111794,
+    "establecimientos": 6
+  },
+  {
+    "distrito": "Breña",
+    "clave": "BRENA",
+    "lat": -12.063868,
+    "lng": -77.04807,
+    "establecimientos": 4
+  },
+  {
+    "distrito": "Callao",
+    "clave": "CALLAO",
+    "lat": -12.033657,
+    "lng": -77.120245,
+    "establecimientos": 31
+  },
+  {
+    "distrito": "Carabayllo",
+    "clave": "CARABAYLLO",
+    "lat": -11.879068,
+    "lng": -77.023206,
+    "establecimientos": 14
+  },
+  {
+    "distrito": "Carmen de la Legua Reynoso",
+    "clave": "CARMEN DE LA LEGUA REYNOSO",
+    "lat": -12.041045,
+    "lng": -77.093371,
+    "establecimientos": 4
+  },
+  {
+    "distrito": "Chaclacayo",
+    "clave": "CHACLACAYO",
+    "lat": -11.986724,
+    "lng": -76.801279,
+    "establecimientos": 8
+  },
+  {
+    "distrito": "Chorrillos",
+    "clave": "CHORRILLOS",
+    "lat": -12.187054,
+    "lng": -77.012675,
+    "establecimientos": 23
+  },
+  {
+    "distrito": "Cieneguilla",
+    "clave": "CIENEGUILLA",
+    "lat": -12.112212,
+    "lng": -76.816773,
+    "establecimientos": 5
+  },
+  {
+    "distrito": "Comas",
+    "clave": "COMAS",
+    "lat": -11.934977,
+    "lng": -77.047098,
+    "establecimientos": 30
+  },
+  {
+    "distrito": "El Agustino",
+    "clave": "EL AGUSTINO",
+    "lat": -12.048914,
+    "lng": -77.00003,
+    "establecimientos": 14
+  },
+  {
+    "distrito": "Independencia",
+    "clave": "INDEPENDENCIA",
+    "lat": -11.990413,
+    "lng": -77.047619,
+    "establecimientos": 11
+  },
+  {
+    "distrito": "Jesús María",
+    "clave": "JESUS MARIA",
+    "lat": -12.073503,
+    "lng": -77.044828,
+    "establecimientos": 14
+  },
+  {
+    "distrito": "La Molina",
+    "clave": "LA MOLINA",
+    "lat": -12.074404,
+    "lng": -76.943493,
+    "establecimientos": 10
+  },
+  {
+    "distrito": "La Perla",
+    "clave": "LA PERLA",
+    "lat": -12.069513,
+    "lng": -77.121275,
+    "establecimientos": 4
+  },
+  {
+    "distrito": "La Punta",
+    "clave": "LA PUNTA",
+    "lat": -12.068373,
+    "lng": -77.158097,
+    "establecimientos": 1
+  },
+  {
+    "distrito": "La Victoria",
+    "clave": "LA VICTORIA",
+    "lat": -12.061384,
+    "lng": -77.022133,
+    "establecimientos": 10
+  },
+  {
+    "distrito": "Lima",
+    "clave": "LIMA",
+    "lat": -12.049845,
+    "lng": -77.04256,
+    "establecimientos": 25
+  },
+  {
+    "distrito": "Lince",
+    "clave": "LINCE",
+    "lat": -12.084483,
+    "lng": -77.034578,
+    "establecimientos": 11
+  },
+  {
+    "distrito": "Los Olivos",
+    "clave": "LOS OLIVOS",
+    "lat": -11.973438,
+    "lng": -77.076593,
+    "establecimientos": 22
+  },
+  {
+    "distrito": "Lurigancho",
+    "clave": "LURIGANCHO",
+    "lat": -11.948348,
+    "lng": -76.729942,
+    "establecimientos": 27
+  },
+  {
+    "distrito": "Lurín",
+    "clave": "LURIN",
+    "lat": -12.254129,
+    "lng": -76.874675,
+    "establecimientos": 8
+  },
+  {
+    "distrito": "Magdalena del Mar",
+    "clave": "MAGDALENA DEL MAR",
+    "lat": -12.089612,
+    "lng": -77.06813,
+    "establecimientos": 7
+  },
+  {
+    "distrito": "Mi Perú",
+    "clave": "MI PERU",
+    "lat": -11.952877,
+    "lng": -77.088324,
+    "establecimientos": 2
+  },
+  {
+    "distrito": "Miraflores",
+    "clave": "MIRAFLORES",
+    "lat": -12.118965,
+    "lng": -77.030663,
+    "establecimientos": 15
+  },
+  {
+    "distrito": "Pachacámac",
+    "clave": "PACHACAMAC",
+    "lat": -12.159009,
+    "lng": -76.870189,
+    "establecimientos": 13
+  },
+  {
+    "distrito": "Pucusana",
+    "clave": "PUCUSANA",
+    "lat": -12.476462,
+    "lng": -76.773477,
+    "establecimientos": 2
+  },
+  {
+    "distrito": "Pueblo Libre",
+    "clave": "PUEBLO LIBRE",
+    "lat": -12.071693,
+    "lng": -77.059206,
+    "establecimientos": 6
+  },
+  {
+    "distrito": "Puente Piedra",
+    "clave": "PUENTE PIEDRA",
+    "lat": -11.863181,
+    "lng": -77.08442,
+    "establecimientos": 11
+  },
+  {
+    "distrito": "Punta Hermosa",
+    "clave": "PUNTA HERMOSA",
+    "lat": -12.337929,
+    "lng": -76.82609,
+    "establecimientos": 1
+  },
+  {
+    "distrito": "Punta Negra",
+    "clave": "PUNTA NEGRA",
+    "lat": -12.365408,
+    "lng": -76.796185,
+    "establecimientos": 1
+  },
+  {
+    "distrito": "Rímac",
+    "clave": "RIMAC",
+    "lat": -12.031063,
+    "lng": -77.030254,
+    "establecimientos": 9
+  },
+  {
+    "distrito": "San Bartolo",
+    "clave": "SAN BARTOLO",
+    "lat": -12.38736,
+    "lng": -76.777024,
+    "establecimientos": 1
+  },
+  {
+    "distrito": "San Borja",
+    "clave": "SAN BORJA",
+    "lat": -12.095989,
+    "lng": -77.003746,
+    "establecimientos": 21
+  },
+  {
+    "distrito": "San Isidro",
+    "clave": "SAN ISIDRO",
+    "lat": -12.093083,
+    "lng": -77.023889,
+    "establecimientos": 20
+  },
+  {
+    "distrito": "San Juan de Lurigancho",
+    "clave": "SAN JUAN DE LURIGANCHO",
+    "lat": -11.98314,
+    "lng": -77.003057,
+    "establecimientos": 43
+  },
+  {
+    "distrito": "San Juan de Miraflores",
+    "clave": "SAN JUAN DE MIRAFLORES",
+    "lat": -12.158114,
+    "lng": -76.963714,
+    "establecimientos": 32
+  },
+  {
+    "distrito": "San Luis",
+    "clave": "SAN LUIS",
+    "lat": -12.070565,
+    "lng": -76.993437,
+    "establecimientos": 2
+  },
+  {
+    "distrito": "San Martín de Porres",
+    "clave": "SAN MARTIN DE PORRES",
+    "lat": -12.00564,
+    "lng": -77.079382,
+    "establecimientos": 26
+  },
+  {
+    "distrito": "San Miguel",
+    "clave": "SAN MIGUEL",
+    "lat": -12.07456,
+    "lng": -77.095152,
+    "establecimientos": 6
+  },
+  {
+    "distrito": "Santa Anita",
+    "clave": "SANTA ANITA",
+    "lat": -12.045035,
+    "lng": -76.964532,
+    "establecimientos": 15
+  },
+  {
+    "distrito": "Santa María del Mar",
+    "clave": "SANTA MARIA DEL MAR",
+    "lat": -12.392389,
+    "lng": -76.773827,
+    "establecimientos": 1
+  },
+  {
+    "distrito": "Santa Rosa",
+    "clave": "SANTA ROSA",
+    "lat": -11.805735,
+    "lng": -77.1583,
+    "establecimientos": 3
+  },
+  {
+    "distrito": "Santiago de Surco",
+    "clave": "SANTIAGO DE SURCO",
+    "lat": -12.128246,
+    "lng": -76.984405,
+    "establecimientos": 23
+  },
+  {
+    "distrito": "Surquillo",
+    "clave": "SURQUILLO",
+    "lat": -12.113558,
+    "lng": -77.019746,
+    "establecimientos": 9
+  },
+  {
+    "distrito": "Ventanilla",
+    "clave": "VENTANILLA",
+    "lat": -11.872551,
+    "lng": -77.128601,
+    "establecimientos": 17
+  },
+  {
+    "distrito": "Villa el Salvador",
+    "clave": "VILLA EL SALVADOR",
+    "lat": -12.213271,
+    "lng": -76.937761,
+    "establecimientos": 21
+  },
+  {
+    "distrito": "Villa María del Triunfo",
+    "clave": "VILLA MARIA DEL TRIUNFO",
+    "lat": -12.169918,
+    "lng": -76.938875,
+    "establecimientos": 24
+  }
+]

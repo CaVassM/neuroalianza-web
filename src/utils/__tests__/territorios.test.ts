@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { Establecimiento } from '../../types';
-import rawEstablecimientos from '../../data/establecimientos.json';
+import { ESTABLECIMIENTOS } from '../../data/establecimientos';
 import {
   calcularTerritorio,
   establecimientoDeZona,
@@ -11,7 +11,7 @@ import {
 } from '../territorios';
 import { haversineKm } from '../distancia';
 
-const datos = rawEstablecimientos as Establecimiento[];
+const datos = ESTABLECIMIENTOS;
 const primerNivel = datos.filter(esPrimerNivel);
 
 describe('esPrimerNivel', () => {

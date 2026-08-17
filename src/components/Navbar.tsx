@@ -8,7 +8,10 @@ interface NavbarProps {
   currentScreen: ScreenType;
   onNavigate: (screen: ScreenType) => void;
   user: UserProfile;
+  /** Borra el perfil guardado y arranca un registro nuevo. */
   onResetFlow?: () => void;
+  /** Borra el perfil guardado y vuelve al inicio de sesión. */
+  onCerrarSesion?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -16,6 +19,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onNavigate,
   user,
   onResetFlow,
+  onCerrarSesion,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
@@ -119,16 +123,22 @@ export const Navbar: React.FC<NavbarProps> = ({
                       setProfileDropdownOpen(false);
                       if (onResetFlow) onResetFlow();
                     }}
-                    className="w-full text-left px-3 py-2 text-xs text-[#6E6A75] hover:bg-[#F7F5FA] hover:text-[#4A2270] rounded-lg transition-colors flex items-center gap-2"
+                    className="w-full text-left px-3 py-2 text-xs text-[#6E6A75] hover:bg-[#F7F5FA] hover:text-[#4A2270] rounded-lg transition-colors flex items-start gap-2"
                   >
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    <span>Volver a simular registro</span>
+                    <RefreshCw className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                    <span>
+                      Registrar una cuenta nueva
+                      <span className="block text-[10.5px] text-[#8A8594]">
+                        Borra este perfil y empieza de cero
+                      </span>
+                    </span>
                   </button>
 
                   <button
                     onClick={() => {
                       setProfileDropdownOpen(false);
-                      onNavigate('login');
+                      if (onCerrarSesion) onCerrarSesion();
+                      else onNavigate('login');
                     }}
                     className="w-full text-left px-3 py-2 text-xs text-rose-600 hover:bg-rose-50 rounded-lg transition-colors flex items-center gap-2 mt-1"
                   >

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import rawEstablecimientos from '../../data/establecimientos.json';
+import { ESTABLECIMIENTOS } from '../../data/establecimientos';
 import {
   getDistrictCoordinates,
   distritoConCobertura,
@@ -7,7 +7,7 @@ import {
   haversineKm,
 } from '../distancia';
 
-const datos = rawEstablecimientos as Array<{ distrito: string; lat: number; lng: number }>;
+const datos = ESTABLECIMIENTOS;
 const distritos = [...new Set(datos.map((d) => d.distrito))];
 
 const mediana = (valores: number[]) => {

@@ -79,6 +79,13 @@ export interface CaseData {
   district: string;
   insurance: InsuranceType;
   fase: CasePhase;
+  /**
+   * null cuando el caso todavía no tiene tamizaje aplicado.
+   *
+   * Antes se rellenaba con un puntaje inventado —5, "riesgo moderado", con las
+   * respuestas de otro caso— y un profesional abría la ficha creyendo que la
+   * familia ya había respondido el M-CHAT.
+   */
   instrumento: {
     nombre: string;
     score: number;
@@ -86,7 +93,7 @@ export interface CaseData {
     fecha: string;
     respondidoPor: string;
     respuestas: Record<number, 'si' | 'no'>;
-  };
+  } | null;
   registros: CaseLogItem[];
 }
 

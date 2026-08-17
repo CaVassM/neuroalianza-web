@@ -1,4 +1,4 @@
-import rawEstablecimientos from '../data/establecimientos.json';
+import centrosDistrito from '../data/centrosDistrito.json';
 
 /**
  * Haversine formula for distance in kilometers
@@ -52,31 +52,18 @@ const normalizar = (texto: string) =>
  * Lurigancho se estiran más de veinte kilómetros, con casi todos sus
  * establecimientos apiñados en la parte urbana y unos pocos sueltos en la
  * quebrada. La media los arrastraba hacia el cerro, donde no vive casi nadie.
+ *
+ * Los centros llegan ya calculados desde el generador. Calcularlos aquí
+ * obligaba a importar el padrón entero —650 registros— en una utilidad que usan
+ * cuatro componentes, y el chequeo de tipos acababa agotando la memoria
+ * infiriendo su tipo literal una y otra vez.
  */
-const mediana = (valores: number[]) => {
-  const orden = [...valores].sort((a, b) => a - b);
-  const medio = orden.length >> 1;
-  return orden.length % 2 ? orden[medio] : (orden[medio - 1] + orden[medio]) / 2;
-};
-
-const CENTROS_DISTRITO: Map<string, { lat: number; lng: number }> = (() => {
-  const porDistrito = new Map<string, { lat: number[]; lng: number[] }>();
-
-  for (const item of rawEstablecimientos as Array<{ distrito: string; lat: number; lng: number }>) {
-    const clave = normalizar(item.distrito);
-    const acumulado = porDistrito.get(clave) ?? { lat: [], lng: [] };
-    acumulado.lat.push(item.lat);
-    acumulado.lng.push(item.lng);
-    porDistrito.set(clave, acumulado);
-  }
-
-  return new Map(
-    [...porDistrito].map(([clave, { lat, lng }]) => [
-      clave,
-      { lat: mediana(lat), lng: mediana(lng) },
-    ])
-  );
-})();
+const CENTROS_DISTRITO: Map<string, { lat: number; lng: number }> = new Map(
+  (centrosDistrito as Array<{ clave: string; lat: number; lng: number }>).map((d) => [
+    d.clave,
+    { lat: d.lat, lng: d.lng },
+  ])
+);
 
 /**
  * Referencias de fuera de Lima y Callao.

@@ -96,7 +96,7 @@ export const ProfesionalView: React.FC<ProfesionalViewProps> = ({
               No encontramos un caso registrado con ese código
             </h2>
             <p className="text-sm text-[#6E6A75] leading-relaxed">
-              El código ingresado (<span className="font-mono font-bold text-[#4A2270]">{currentCode}</span>) no existe o venció. Puedes probar con los códigos de demostración: <span className="font-mono font-bold">NA-7K3M9</span>, <span className="font-mono font-bold">NA-8P2Q4</span> o <span className="font-mono font-bold">NA-3X9Y1</span>.
+              El código ingresado (<span className="font-mono font-bold text-[#4A2270]">{currentCode}</span>) no existe o venció. Puedes probar con los códigos de demostración: <span className="font-mono font-bold">NA-7K3M9</span>, <span className="font-mono font-bold">NA-4P2XB</span> o <span className="font-mono font-bold">NA-9Q6RT</span>.
             </p>
           </div>
 
@@ -138,6 +138,77 @@ export const ProfesionalView: React.FC<ProfesionalViewProps> = ({
   }
 
   const { instrumento: inst, registros } = caseData;
+
+  // Caso sin tamizaje. Existe, pero no hay nada que interpretar: la mitad de
+  // esta pantalla habla del M-CHAT y sin resultados no puede inventárselo.
+  if (!inst) {
+    return (
+      <div className="min-h-screen w-full bg-[#F7F5FA] flex flex-col items-center justify-center px-4 py-12">
+        <div className="w-full max-w-[560px] bg-white rounded-3xl border border-[#E5E1EC] p-8 sm:p-10 space-y-6 shadow-md">
+          <div className="flex justify-center">
+            <Logo size="md" />
+          </div>
+
+          <div className="text-center space-y-2">
+            <span className="inline-block font-mono text-xs font-bold text-[#4A2270] bg-[#E9DFF5] px-2.5 py-1 rounded-lg">
+              {caseData.codigo}
+            </span>
+            <h2 className="text-2xl font-fraunces font-bold text-[#2E2A33]">
+              Caso sin tamizaje registrado
+            </h2>
+            <p className="text-sm text-[#6E6A75] leading-relaxed">
+              El caso existe y está en la fase {caseData.fase}, pero la familia todavía no
+              ha aplicado el M-CHAT-R/F. No hay puntaje ni respuestas que revisar.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 text-center">
+            <div className="p-3 rounded-xl bg-[#FAF8FD] border border-[#E5E1EC]">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[#6E6A75] block">
+                Edad
+              </span>
+              <span className="text-sm font-bold text-[#2E2A33]">
+                {caseData.childAgeMonths} meses
+              </span>
+            </div>
+            <div className="p-3 rounded-xl bg-[#FAF8FD] border border-[#E5E1EC]">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[#6E6A75] block">
+                Distrito
+              </span>
+              <span className="text-sm font-bold text-[#2E2A33]">{caseData.district}</span>
+            </div>
+          </div>
+
+          {registros.length > 0 && (
+            <div className="space-y-2">
+              <h3 className="text-[13px] font-bold text-[#2E2A33]">Historial del caso</h3>
+              <ul className="space-y-1.5">
+                {registros.map((r, i) => (
+                  <li
+                    key={i}
+                    className="text-xs text-[#6E6A75] bg-[#FAF8FD] border border-[#E5E1EC] rounded-lg px-3 py-2"
+                  >
+                    <span className="font-semibold text-[#2E2A33]">{r.titulo}</span> — {r.fecha}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {onBackToApp && (
+            <button
+              type="button"
+              onClick={onBackToApp}
+              className="w-full py-3 bg-[#4A2270] hover:bg-[#381559] text-white text-sm font-bold rounded-xl transition-all cursor-pointer"
+            >
+              Volver a la aplicación
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   const score = inst.score;
   const rawNivel = inst.nivel;
   const nivel = rawNivel === 'bajo' ? 'baja' : rawNivel === 'medio' ? 'moderada' : rawNivel === 'alto' ? 'alta' : rawNivel;

@@ -1,6 +1,6 @@
 import { CaseData, UserProfile } from '../types';
 import { CASOS_DEMO_MAP, DEMO_CASO_1 } from '../datos/demo';
-import { calcularEdadMeses } from '../utils/age';
+import { calcularEdadMeses, parseMesTextoANumero } from '../utils/age';
 
 /**
  * Builds or fetches a case based on case code and current user state
@@ -71,14 +71,18 @@ export function getCaseByCode(codigo: string, currentUser?: UserProfile): CaseDa
       district: c.distrito,
       insurance: c.seguro.toLowerCase() as any,
       fase: c.faseActual,
-      instrumento: {
-        nombre: 'M-CHAT-R/F (versión peruana, Anexo 11 NTS N° 238-MINSA/DGIESP-2025)',
-        score: t?.puntaje ?? 0,
-        nivel: t?.nivel ?? 'baja',
-        fecha: t?.fecha || new Date().toLocaleDateString('es-PE'),
-        respondidoPor: 'Respondido por el cuidador',
-        respuestas: t?.respuestas || {},
-      },
+      // Sin tamizaje no hay instrumento. Poner puntaje 0 y "riesgo bajo" era
+      // afirmar que la familia respondió y salió bien.
+      instrumento: t
+        ? {
+            nombre: 'M-CHAT-R/F (versión peruana, Anexo 11 NTS N° 238-MINSA/DGIESP-2025)',
+            score: t.puntaje,
+            nivel: t.nivel,
+            fecha: t.fecha,
+            respondidoPor: 'Respondido por el cuidador',
+            respuestas: t.respuestas,
+          }
+        : null,
       registros: demoEntry.eventos.map((e) => ({
         fecha: new Date(e.fecha).toLocaleDateString('es-PE', { day: 'numeric', month: 'short' }),
         titulo: e.descripcion,
@@ -91,24 +95,37 @@ export function getCaseByCode(codigo: string, currentUser?: UserProfile): CaseDa
 
   // 2. Check if matches currentUser custom code
   if (currentUser?.caseCode && cleanCode === currentUser.caseCode.toUpperCase()) {
-    const birthM = parseInt(currentUser.child.birthMonth, 10) || 12;
+    // El mes de nacimiento se guarda como nombre ("Diciembre"), así que
+    // parseInt devolvía NaN y todos los casos salían nacidos en diciembre.
+    const birthM = parseMesTextoANumero(currentUser.child.birthMonth);
     const birthY = parseInt(currentUser.child.birthYear, 10) || 2024;
     const ageMonths = calcularEdadMeses(birthM, birthY);
+    const tamizaje = currentUser.screeningResult;
 
     return {
       codigo: cleanCode,
       childAgeMonths: ageMonths,
-      district: currentUser.location?.district || 'Miraflores',
+      district: currentUser.location?.district || 'No registrado',
       insurance: (currentUser.insurance?.toLowerCase() as any) || 'sis',
       fase: currentUser.fase || 3,
-      instrumento: {
-        nombre: 'M-CHAT-R/F (versión peruana, Anexo 11 NTS N° 238-MINSA/DGIESP-2025)',
-        score: currentUser.screeningResult?.score ?? 5,
-        nivel: currentUser.screeningResult?.nivel ?? 'moderada',
-        fecha: '14 de agosto de 2026',
-        respondidoPor: 'Respondido por el cuidador',
-        respuestas: currentUser.screeningAnswers || DEMO_CASO_1.tamizaje.respuestas,
-      },
+      instrumento: tamizaje
+        ? {
+            nombre: 'M-CHAT-R/F (versión peruana, Anexo 11 NTS N° 238-MINSA/DGIESP-2025)',
+            score: tamizaje.score,
+            nivel: tamizaje.nivel,
+            fecha:
+              tamizaje.fecha ||
+              (tamizaje.completedAt
+                ? new Date(tamizaje.completedAt).toLocaleDateString('es-PE', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                  })
+                : 'Fecha no registrada'),
+            respondidoPor: 'Respondido por el cuidador',
+            respuestas: currentUser.screeningAnswers || {},
+          }
+        : null,
       registros: (currentUser.registros || []).map((r) => ({
         fecha: r.fecha,
         titulo: r.titulo,

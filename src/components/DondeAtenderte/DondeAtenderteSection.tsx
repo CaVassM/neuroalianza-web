@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { UserProfile, Establecimiento, InsuranceType } from '../../types';
-import rawEstablecimientos from '../../data/establecimientos.json';
+import { ESTABLECIMIENTOS } from '../../data/establecimientos';
 import {
   haversineKm,
   getDistrictCoordinates,
@@ -204,7 +204,7 @@ export const DondeAtenderteSection: React.FC<DondeAtenderteSectionProps> = ({
     const validData: Establecimiento[] = [];
     let discardedCount = 0;
 
-    (rawEstablecimientos as Establecimiento[]).forEach((item) => {
+    (ESTABLECIMIENTOS).forEach((item) => {
       // Discard: estado !== ACTIVO, lat/lng null/invalid, or out of Peru bounding box [-18, 0], [-81, -68]
       if (
         item.estado !== 'ACTIVO' ||

@@ -27,7 +27,9 @@ import {
   HelpCircle,
   FileText,
   Clock,
-  ExternalLink
+  ExternalLink,
+  RotateCcw,
+  FlaskConical
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -46,6 +48,7 @@ export const MiRutaView: React.FC<MiRutaViewProps> = ({ user, onUpdateUser, onNa
   const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   // Barrier modal & active filter state
+  const [showReiniciarModal, setShowReiniciarModal] = useState(false);
   const [showBarrierModal, setShowBarrierModal] = useState(false);
   const [selectedBarrier, setSelectedBarrier] = useState<BarrierKey | null>(null);
   const [activeBarrierFilter, setActiveBarrierFilter] = useState<BarrierKey | null>(user.activeBarrierFilter || null);
@@ -87,6 +90,41 @@ export const MiRutaView: React.FC<MiRutaViewProps> = ({ user, onUpdateUser, onNa
     user.selectedEstablecimientoCodigo ||
       (user.registros || []).some((r) => r.tipo === 'cita')
   );
+
+  /**
+   * Devolver la ruta a su punto de partida.
+   *
+   * Borra lo que la familia fue construyendo —tamizaje, diagnóstico,
+   * establecimiento, citas, derivaciones, barreras— y conserva quién es: nombre,
+   * niño, distrito, seguro y código de caso. Así se puede volver a recorrer la
+   * ruta entera delante de alguien sin crear otra cuenta ni perder el perfil.
+   *
+   * La fase vuelve a 2 y no a 1 porque el registro sigue hecho: en el modelo de
+   * fases, "cuenta creada" ES la fase 2.
+   */
+  const handleReiniciarRuta = () => {
+    setShowReiniciarModal(false);
+    if (!onUpdateUser) return;
+
+    setActiveBarrierFilter(null);
+    setSelectedBarrier(null);
+
+    onUpdateUser({
+      ...user,
+      fase: 2,
+      screeningResult: null,
+      screeningAnswers: undefined,
+      diagnosis: null,
+      selectedEstablecimientoCodigo: undefined,
+      derivaciones: [],
+      barrierReport: null,
+      activeBarrierFilter: null,
+      tratamiento: undefined,
+      registros: [],
+    });
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const handleSaveDiagnosis = (e: React.FormEvent) => {
     e.preventDefault();
@@ -466,6 +504,32 @@ export const MiRutaView: React.FC<MiRutaViewProps> = ({ user, onUpdateUser, onNa
 
         {/* 6-Phase Tracker */}
         <RastreadorFase user={user} onUpdateUser={onUpdateUser} />
+
+        {/* Reiniciar la ruta. Herramienta de presentación, no del producto: por
+            eso va en gris, al pie del rastreador y con el aviso delante. Una
+            familia real no necesita borrar su avance; quien enseña la
+            plataforma sí, para volver a recorrerla sin crear otra cuenta. */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#FAF8FD] border border-dashed border-[#D5C6EB] rounded-2xl px-4 py-3">
+          <div className="flex items-start gap-2.5">
+            <FlaskConical className="w-4 h-4 text-[#6B3FA0] shrink-0 mt-0.5" />
+            <div>
+              <p className="text-xs font-bold text-[#4A2270]">Herramienta de demostración</p>
+              <p className="text-[11.5px] text-[#6E6A75] leading-relaxed">
+                Devuelve la ruta a su punto de partida y conserva la cuenta:{' '}
+                {childName}, tu distrito y tu seguro se quedan como están.
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setShowReiniciarModal(true)}
+            className="shrink-0 px-4 py-2 bg-white hover:bg-[#F7F5FA] border border-[#D5C6EB] text-[#4A2270] text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>Reiniciar mi ruta</span>
+          </button>
+        </div>
       </div>
 
       {/* Fase 5: el asistente acaba de desbloquearse y es lo que más ayuda
@@ -760,6 +824,79 @@ export const MiRutaView: React.FC<MiRutaViewProps> = ({ user, onUpdateUser, onNa
           </div>
         )}
       </section>
+
+      {/* CONFIRMACIÓN DE REINICIO.
+          Borra avance real, así que se pregunta antes y se enumera qué se
+          pierde y qué se conserva. */}
+      <AnimatePresence>
+        {showReiniciarModal && (
+          <div
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/35 p-0 sm:p-4"
+            onClick={() => setShowReiniciarModal(false)}
+            role="presentation"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: 12 }}
+              className="bg-white rounded-t-3xl sm:rounded-2xl p-6 sm:p-8 max-w-[440px] w-full shadow-2xl border border-[#E5E1EC] space-y-5"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="w-12 h-12 rounded-2xl bg-[#F4EFFB] text-[#4A2270] flex items-center justify-center">
+                <RotateCcw className="w-6 h-6" />
+              </div>
+
+              <div className="space-y-2">
+                <h3 className="text-xl font-fraunces font-bold text-[#2E2A33]">
+                  ¿Reiniciar la ruta de {childName}?
+                </h3>
+                <p className="text-[13px] text-[#6E6A75] leading-relaxed">
+                  Volverás a la fase 2, justo después del registro.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-[12px]">
+                <div className="p-3 rounded-xl bg-[#FDF1DF] border border-[#F6DCB6]">
+                  <span className="font-bold text-[#C77700] block mb-1">Se borra</span>
+                  <ul className="text-[#6E6A75] space-y-0.5 leading-snug">
+                    <li>Tamizaje y resultado</li>
+                    <li>Diagnóstico registrado</li>
+                    <li>Establecimiento elegido</li>
+                    <li>Citas y derivaciones</li>
+                    <li>Barreras reportadas</li>
+                  </ul>
+                </div>
+                <div className="p-3 rounded-xl bg-[#E6F2EC] border border-[#C3E5D4]">
+                  <span className="font-bold text-[#2E7D5B] block mb-1">Se conserva</span>
+                  <ul className="text-[#6E6A75] space-y-0.5 leading-snug">
+                    <li>Tu cuenta y tu celular</li>
+                    <li>{childName} y su fecha</li>
+                    <li>Distrito y seguro</li>
+                    <li>Tu código de caso</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-2.5">
+                <button
+                  type="button"
+                  onClick={handleReiniciarRuta}
+                  className="flex-1 py-3 bg-[#4A2270] hover:bg-[#381559] text-white text-sm font-bold rounded-xl transition-all cursor-pointer"
+                >
+                  Sí, reiniciar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowReiniciarModal(false)}
+                  className="flex-1 sm:flex-none px-5 py-3 bg-white border border-[#E5E1EC] text-[#6E6A75] hover:bg-[#F7F5FA] text-sm font-semibold rounded-xl transition-all cursor-pointer"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* MODAL PLAN B ANTE UNA BARRERA */}
       <AnimatePresence>

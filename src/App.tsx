@@ -15,7 +15,7 @@ import { EvaluacionesView } from './views/EvaluacionesView';
 import { CuestionarioView } from './views/CuestionarioView';
 import { ProfesionalView } from './views/ProfesionalView';
 import { SeguimientoView } from './views/SeguimientoView';
-import { cargarPerfil, guardarPerfil } from './data/perfilLocal';
+import { cargarPerfil, guardarPerfil, borrarPerfil } from './data/perfilLocal';
 import { crearPerfilNuevo, generarCodigoCaso, PERFIL_DEMO } from './data/perfiles';
 import { useRecorridoDemo } from './demo/useRecorridoDemo';
 import { PanelDemo } from './demo/PanelDemo';
@@ -166,8 +166,39 @@ export default function App() {
     setCurrentScreen('dashboard');
   };
 
+  /**
+   * Empezar de cero, de verdad.
+   *
+   * "Cerrar sesión" y "volver a simular registro" solo cambiaban de pantalla: el
+   * perfil seguía en localStorage y quien entraba después se encontraba con el
+   * niño, la fase y el tamizaje de la persona anterior. En una demostración,
+   * donde el mismo equipo pasa de mano en mano, eso es exactamente lo que no
+   * puede ocurrir.
+   */
   const handleResetFlow = () => {
+    borrarPerfil();
+    setUser(crearPerfilNuevo('', ''));
+    setCurrentScreen('signup');
+  };
+
+  const handleCerrarSesion = () => {
+    borrarPerfil();
+    setUser(PERFIL_DEMO);
     setCurrentScreen('login');
+  };
+
+  /**
+   * Repetir el tamizaje.
+   *
+   * El botón existía en Evaluaciones pero nadie le pasaba esta función, así que
+   * abría el aviso de confirmación y no hacía nada. Y como el perfil de
+   * demostración ya trae un resultado, era el ÚNICO camino que quedaba para
+   * llegar al cuestionario: sin esto, el M-CHAT no se podía probar.
+   */
+  const handleRepetirEvaluacion = () => {
+    setUser((prev) => ({ ...prev, screeningResult: null, screeningAnswers: undefined }));
+    setCurrentScreen('cuestionario');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Helper to determine if we are in onboarding or professional view
@@ -192,6 +223,7 @@ export default function App() {
           }}
           user={user}
           onResetFlow={handleResetFlow}
+          onCerrarSesion={handleCerrarSesion}
         />
       )}
 
@@ -310,6 +342,7 @@ export default function App() {
         {currentScreen === 'evaluaciones' && (
           <EvaluacionesView
             user={user}
+            onResetEvaluation={handleRepetirEvaluacion}
             onNavigate={(screen) => {
               setCurrentScreen(screen);
               window.scrollTo({ top: 0, behavior: 'smooth' });

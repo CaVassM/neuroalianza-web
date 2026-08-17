@@ -22,5 +22,8 @@
     },
     "allowImportingTsExtensions": true,
     "noEmit": true
-  }
+  },
+  "//": "Sin include, tsc recorre todo el proyecto, y con allowJs activo eso incluye dist/: cuarenta y cinco megas de bundles minificados que agotaban la memoria del chequeo de tipos. Solo se revisa el codigo fuente.",
+  "include": ["src"],
+  "exclude": ["node_modules", "dist", "build", "coverage"]
 }
