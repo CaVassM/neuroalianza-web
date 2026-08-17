@@ -343,6 +343,7 @@ export default function App() {
         {currentScreen === 'dashboard' && (
           <DashboardView
             user={user}
+            onIniciarDemo={demo.iniciar}
             onUpdateUser={(updated) => setUser(updated)}
             onNavigate={(screen) => {
               setCurrentScreen(screen);
@@ -355,6 +356,12 @@ export default function App() {
           <ConoceView
             onNavigateToEvaluaciones={() => {
               setCurrentScreen('evaluaciones');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            onIniciarDemo={demo.iniciar}
+            onAbrirVistaProfesional={() => {
+              setProfesionalCode(user.caseCode || 'NA-7K3M9');
+              setCurrentScreen('profesional');
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
           />

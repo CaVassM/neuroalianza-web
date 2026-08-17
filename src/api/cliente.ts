@@ -134,6 +134,12 @@ export interface SeguimientoCreado extends Seguimiento {
 
 export interface ResultadoEnvio {
   enviado: boolean;
+  /**
+   * true cuando el motor de envíos está apagado (ENVIO_ACTIVO=false). No es un
+   * fallo: el caso y su enlace existen igual, y la interfaz debe entregarlo en
+   * pantalla diciendo por qué no llegó el mensaje.
+   */
+  simulado?: boolean;
   /** Por qué no se envió. Suele ser una protección anti-baneo, no un error. */
   motivo: string;
   enlace: string;

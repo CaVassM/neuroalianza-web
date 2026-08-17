@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Loader2, Check, Info } from 'lucide-react';
+import { Loader2, Check, Info, Copy, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { UserProfile } from '../types';
 import {
@@ -31,6 +31,7 @@ export const BotonSeguimientoWhatsApp: React.FC<Props> = ({ user, onUpdateUser }
   const [enviando, setEnviando] = useState(false);
   const [resultado, setResultado] = useState<ResultadoEnvio | null>(null);
   const [error, setError] = useState('');
+  const [copiado, setCopiado] = useState(false);
 
   const telefono = user.phone;
 
@@ -60,9 +61,22 @@ export const BotonSeguimientoWhatsApp: React.FC<Props> = ({ user, onUpdateUser }
 
       setResultado(await enviarEnlacePorWhatsApp(id));
     } catch {
-      setError('No pudimos conectar con el servicio. Inténtalo en un momento.');
+      setError(
+        'No pudimos conectar con el servidor, así que todavía no hay enlace que darte. Vuelve a intentarlo en un momento.'
+      );
     } finally {
       setEnviando(false);
+    }
+  };
+
+  const copiarEnlace = async () => {
+    if (!resultado?.enlace) return;
+    try {
+      await navigator.clipboard.writeText(resultado.enlace);
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2000);
+    } catch {
+      // Sin permiso de portapapeles el enlace sigue visible y seleccionable.
     }
   };
 
@@ -102,31 +116,89 @@ export const BotonSeguimientoWhatsApp: React.FC<Props> = ({ user, onUpdateUser }
         )}
       </button>
 
+      {/* El enlace se entrega SIEMPRE en pantalla, salga o no el mensaje.
+          Antes solo existía dentro del WhatsApp: si el envío estaba apagado o
+          una barrera anti-baneo lo frenaba, la familia se quedaba sin nada
+          aunque su caso de seguimiento ya estuviera creado. */}
       <AnimatePresence>
         {resultado && (
           <motion.div
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className={`rounded-xl px-4 py-3 flex items-start gap-2.5 text-[13px] leading-relaxed ${
+            className={`rounded-xl border px-4 py-3.5 space-y-3 text-[13px] leading-relaxed ${
               resultado.enviado
-                ? 'bg-[#E6F2EC] border border-[#A8D5BE] text-[#2E7D5B]'
-                : 'bg-[#FDF1DF] border border-[#FBE0B8] text-[#9E5D00]'
+                ? 'bg-[#E6F2EC] border-[#A8D5BE] text-[#2E7D5B]'
+                : 'bg-[#FDF1DF] border-[#FBE0B8] text-[#9E5D00]'
             }`}
           >
-            {resultado.enviado ? (
-              <>
-                <Check className="w-4 h-4 shrink-0 mt-0.5" />
-                <span>
-                  Te enviamos el enlace a tu WhatsApp{' '}
-                  <strong className="font-semibold">···{telefono.slice(-4)}</strong>.
+            <div className="flex items-start gap-2.5">
+              {resultado.enviado ? (
+                <>
+                  <Check className="w-4 h-4 shrink-0 mt-0.5" />
+                  <span>
+                    Te enviamos el enlace a tu WhatsApp{' '}
+                    <strong className="font-semibold">···{telefono.slice(-4)}</strong>.
+                  </span>
+                </>
+              ) : resultado.simulado ? (
+                <>
+                  <Info className="w-4 h-4 shrink-0 mt-0.5" />
+                  <span>
+                    <strong className="font-semibold">
+                      El envío por WhatsApp está desactivado en esta demostración.
+                    </strong>{' '}
+                    Tu seguimiento quedó creado igual: entra por el enlace de aquí abajo.
+                  </span>
+                </>
+              ) : (
+                <>
+                  <Info className="w-4 h-4 shrink-0 mt-0.5" />
+                  <span>
+                    {resultado.motivo} Tu seguimiento existe igual: entra por el enlace de
+                    aquí abajo.
+                  </span>
+                </>
+              )}
+            </div>
+
+            {resultado.enlace && (
+              <div className="bg-white/70 border border-black/5 rounded-lg p-3 space-y-2">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[#6E6A75]">
+                  Tu enlace de seguimiento
                 </span>
-              </>
-            ) : (
-              <>
-                <Info className="w-4 h-4 shrink-0 mt-0.5" />
-                <span>{resultado.motivo}</span>
-              </>
+                <p className="font-mono text-[11.5px] text-[#2E2A33] break-all leading-relaxed">
+                  {resultado.enlace}
+                </p>
+                <div className="flex flex-wrap gap-2 pt-0.5">
+                  <a
+                    href={resultado.enlace}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#4A2270] hover:bg-[#381559] text-white text-[12px] font-bold rounded-lg transition-colors"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>Abrir seguimiento</span>
+                  </a>
+                  <button
+                    type="button"
+                    onClick={copiarEnlace}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-[#E5E1EC] text-[#4A2270] text-[12px] font-bold rounded-lg hover:bg-[#FAF8FD] transition-colors cursor-pointer"
+                  >
+                    {copiado ? (
+                      <>
+                        <Check className="w-3.5 h-3.5" />
+                        <span>Copiado</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5" />
+                        <span>Copiar</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
             )}
           </motion.div>
         )}

@@ -14,19 +14,23 @@ import {
   ArrowRight,
   Compass,
   X,
-  CheckCircle2
+  CheckCircle2,
+  PlayCircle
 } from 'lucide-react';
 
 interface DashboardViewProps {
   user: UserProfile;
   onNavigate: (screen: ScreenType) => void;
   onUpdateUser?: (actualizado: UserProfile) => void;
+  /** Arranca el recorrido guiado. */
+  onIniciarDemo?: () => void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
   user,
   onNavigate,
   onUpdateUser,
+  onIniciarDemo,
 }) => {
   const childName = user.child.nickname || 'tu hijo/a';
 
@@ -189,6 +193,44 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           />
         </div>
       </section>
+
+      {/* Invitación al recorrido guiado.
+          Sustituye al tutorial en video: en vez de contar la plataforma, la
+          plataforma se recorre sola. Va aquí arriba y no escondida, porque la
+          duda de "¿y esto qué hace?" aparece justo al entrar. */}
+      {onIniciarDemo && (
+        <section className="bg-white border border-[#D5C6EB] rounded-2xl p-5 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-5 shadow-xs">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-[#E9DFF5] text-[#4A2270] flex items-center justify-center shrink-0">
+              <PlayCircle className="w-6 h-6" />
+            </div>
+            <div className="space-y-1.5">
+              <h3 className="text-[17px] font-bold text-[#2E2A33]">
+                ¿Es tu primera vez? Míralo funcionando
+              </h3>
+              <p className="text-sm text-[#6E6A75] leading-relaxed max-w-xl">
+                En dos minutos recorremos la plataforma por ti con una familia de ejemplo:
+                el tamizaje, dónde le toca atenderse, qué pasa al volver de la cita y cómo
+                responde el asistente. No tienes que escribir nada.
+              </p>
+              <p className="text-[12.5px] text-[#8A8594] leading-relaxed">
+                Usa una cuenta de ejemplo, así que{' '}
+                <strong className="text-[#6E6A75]">no toca tus datos ni tu avance</strong>. Puedes
+                pausarlo, retroceder y salir cuando quieras.
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={onIniciarDemo}
+            className="shrink-0 px-6 py-3.5 bg-[#4A2270] hover:bg-[#381559] text-white text-[15px] font-bold rounded-xl transition-all shadow-xs hover:shadow-md cursor-pointer flex items-center justify-center gap-2"
+          >
+            <span>Empezar el recorrido</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </section>
+      )}
 
       {/* 2. RASTREADOR COMPACTO */}
       <section className="mb-6">

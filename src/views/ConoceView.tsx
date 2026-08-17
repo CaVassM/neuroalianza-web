@@ -6,7 +6,6 @@ import {
   FileText,
   ArrowRight,
   Sparkles,
-  Info,
   ShieldCheck,
   HeartHandshake,
   MapPin,
@@ -14,14 +13,21 @@ import {
   Compass,
   Award
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 
 interface ConoceViewProps {
   onNavigateToEvaluaciones?: () => void;
+  /** Arranca el recorrido guiado, que sustituye al tutorial en video. */
+  onIniciarDemo?: () => void;
+  /** Abre la vista que usa el profesional de salud. */
+  onAbrirVistaProfesional?: () => void;
 }
 
-export const ConoceView: React.FC<ConoceViewProps> = ({ onNavigateToEvaluaciones }) => {
-  const [showVideoModal, setShowVideoModal] = useState(false);
+export const ConoceView: React.FC<ConoceViewProps> = ({
+  onNavigateToEvaluaciones,
+  onIniciarDemo,
+  onAbrirVistaProfesional,
+}) => {
 
   const yesCards = [
     {
@@ -134,15 +140,19 @@ export const ConoceView: React.FC<ConoceViewProps> = ({ onNavigateToEvaluaciones
             <ArrowRight className="w-4 h-4" />
           </motion.button>
 
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => setShowVideoModal(true)}
-            className="w-full sm:w-auto px-6 py-3.5 bg-white hover:bg-[#FAF8FD] text-[#4A2270] border border-[#E5E1EC] text-sm sm:text-base font-bold rounded-2xl transition-all shadow-2xs flex items-center justify-center gap-2 cursor-pointer"
-          >
-            <Play className="w-4 h-4 fill-[#4A2270]" />
-            <span>Ver cómo funciona</span>
-          </motion.button>
+          {/* Antes abría el cuadro del "video". Ahora arranca el recorrido, que
+              es enseñar la plataforma en vez de contarla. */}
+          {onIniciarDemo && (
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={onIniciarDemo}
+              className="w-full sm:w-auto px-6 py-3.5 bg-white hover:bg-[#FAF8FD] text-[#4A2270] border border-[#E5E1EC] text-sm sm:text-base font-bold rounded-2xl transition-all shadow-2xs flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <Play className="w-4 h-4 fill-[#4A2270]" />
+              <span>Ver cómo funciona</span>
+            </motion.button>
+          )}
         </div>
 
         {/* Feature Highlights Strip */}
@@ -348,44 +358,145 @@ export const ConoceView: React.FC<ConoceViewProps> = ({ onNavigateToEvaluaciones
         </div>
       </motion.section>
 
-      {/* 5. Tutorial Video Preview Banner */}
-      <motion.section 
+      {/* 5. RECORRIDO GUIADO.
+          Aquí había un "video explicativo" que en realidad abría un cuadro con
+          tres viñetas. En vez de un video que contase la plataforma, la
+          plataforma se recorre sola: son los mismos dos minutos y se ve
+          funcionando de verdad. */}
+      {onIniciarDemo && (
+        <motion.section
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="space-y-3"
+        >
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <h2 className="text-xl font-bold text-[#2E2A33]">Míralo funcionando</h2>
+              <p className="text-xs text-[#6E6A75]">Dos minutos, sin escribir nada</p>
+            </div>
+            <span className="px-2.5 py-0.5 rounded-full bg-[#E9DFF5] text-[#4A2270] text-[11px] font-bold">
+              Recorrido guiado
+            </span>
+          </div>
+
+          <div className="rounded-3xl bg-[#E9DFF5] border border-[#D5CCE0] p-7 sm:p-9 relative overflow-hidden shadow-sm">
+            <div className="absolute inset-0 opacity-15 pointer-events-none bg-[radial-gradient(#4A2270_1.5px,transparent_1.5px)] [background-size:20px_20px]" />
+
+            <div className="relative z-10 max-w-xl space-y-5">
+              <p className="text-[15px] text-[#2E2A33] leading-relaxed">
+                La plataforma se recorre sola con una familia de ejemplo. Verás cómo se
+                crea la cuenta, cómo sale el tamizaje, dónde le toca atenderse, qué pasa
+                al volver de la primera cita y cómo responde el asistente.
+              </p>
+
+              <ol className="space-y-2 text-[13.5px] text-[#4A2270]">
+                {[
+                  'Avanza solo, paso a paso. Puedes pausarlo y retroceder cuando quieras.',
+                  'Usa una cuenta de ejemplo: no toca tus datos ni tu avance.',
+                  'Al salir, todo vuelve a quedar como estaba.',
+                ].map((linea, i) => (
+                  <li key={i} className="flex items-start gap-2.5">
+                    <span className="w-5 h-5 rounded-full bg-white text-[#4A2270] text-[11px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+                      {i + 1}
+                    </span>
+                    <span className="leading-relaxed">{linea}</span>
+                  </li>
+                ))}
+              </ol>
+
+              <button
+                type="button"
+                onClick={onIniciarDemo}
+                className="inline-flex items-center gap-2.5 px-6 py-3.5 bg-[#4A2270] hover:bg-[#381559] text-white text-[15px] font-bold rounded-xl transition-all shadow-md hover:shadow-lg cursor-pointer"
+              >
+                <Play className="w-4.5 h-4.5 fill-white" />
+                <span>Empezar el recorrido</span>
+              </button>
+            </div>
+          </div>
+        </motion.section>
+      )}
+
+      {/* 6. LA VISTA DEL PROFESIONAL.
+          Existía y no se anunciaba en ningún sitio: había que llegar por el pie
+          de página o escaneando el QR del informe. Es la mitad de la propuesta
+          —que la familia no tenga que volver a contarlo todo— así que se
+          explica aquí, donde se cuenta qué es PAN. */}
+      <motion.section
         initial={{ opacity: 0, y: 30 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.5 }}
         className="space-y-3"
       >
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
-            <h2 className="text-xl font-bold text-[#2E2A33]">Video explicativo</h2>
-            <p className="text-xs text-[#6E6A75]">Resumen interactivo de 2 minutos</p>
+            <h2 className="text-xl font-bold text-[#2E2A33]">
+              Lo que ve el profesional de salud
+            </h2>
+            <p className="text-xs text-[#6E6A75]">
+              El otro lado de la ruta: la consulta empieza con lo que ya contaste
+            </p>
           </div>
-          <span className="px-2.5 py-0.5 rounded-full bg-[#E9DFF5] text-[#4A2270] text-[11px] font-bold">
-            Guía rápida
+          <span className="px-2.5 py-0.5 rounded-full bg-[#E6F2EC] text-[#2E7D5B] text-[11px] font-bold">
+            Para pediatría y CRED
           </span>
         </div>
 
-        <motion.div
-          whileHover={{ scale: 1.01 }}
-          whileTap={{ scale: 0.99 }}
-          onClick={() => setShowVideoModal(true)}
-          className="w-full aspect-video max-h-[360px] rounded-3xl bg-[#E9DFF5] border border-[#D5CCE0] flex flex-col items-center justify-center cursor-pointer transition-all duration-200 group relative overflow-hidden shadow-sm"
-        >
-          {/* Decorative Pattern */}
-          <div className="absolute inset-0 opacity-15 pointer-events-none bg-[radial-gradient(#4A2270_1.5px,transparent_1.5px)] [background-size:20px_20px]" />
+        <div className="bg-white border border-[#E5E1EC] rounded-3xl p-6 sm:p-8 space-y-5 shadow-xs">
+          <p className="text-[15px] text-[#2E2A33] leading-relaxed max-w-2xl">
+            Cada caso tiene un código y un QR. Cuando el profesional lo abre, ve la
+            bitácora completa: el tamizaje con sus respuestas, dónde se está atendiendo la
+            familia, a qué especialidad la derivaron, qué la frenó y si está siguiendo el
+            tratamiento indicado.
+          </p>
 
-          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white text-[#4A2270] flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform mb-3 z-10">
-            <Play className="w-7 h-7 sm:w-8 sm:h-8 fill-[#4A2270] ml-1" />
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {[
+              {
+                titulo: 'No repetir lo ya contado',
+                desc: 'El tamizaje llega hecho, con la fecha y las respuestas una por una.',
+              },
+              {
+                titulo: 'Ver qué detuvo el caso',
+                desc: 'Si no hubo cupos, si quedaba lejos o si no la atendieron, y cuándo.',
+              },
+              {
+                titulo: 'Saber si el tratamiento se cumple',
+                desc: 'Y el motivo cuando no: falta de stock, costo o efectos.',
+              },
+            ].map((item) => (
+              <div
+                key={item.titulo}
+                className="p-4 rounded-xl bg-[#FAF8FD] border border-[#E5E1EC] space-y-1"
+              >
+                <h4 className="text-[13.5px] font-bold text-[#2E2A33] leading-snug">
+                  {item.titulo}
+                </h4>
+                <p className="text-[12.5px] text-[#6E6A75] leading-relaxed">{item.desc}</p>
+              </div>
+            ))}
           </div>
 
-          <span className="text-sm sm:text-base font-bold text-[#4A2270] group-hover:underline z-10">
-            Ver tutorial de orientación
-          </span>
-          <span className="text-xs text-[#6E6A75] mt-1 z-10">
-            Haz clic para abrir el resumen interactivo
-          </span>
-        </motion.div>
+          {onAbrirVistaProfesional && (
+            <button
+              type="button"
+              onClick={onAbrirVistaProfesional}
+              className="inline-flex items-center gap-2 px-5 py-3 bg-white border border-[#D5C6EB] hover:bg-[#FAF8FD] text-[#4A2270] text-[14px] font-bold rounded-xl transition-all cursor-pointer"
+            >
+              <FileText className="w-4 h-4" />
+              <span>Ver la bitácora de un caso de ejemplo</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          )}
+
+          <p className="text-[12px] text-[#8A8594] leading-relaxed border-t border-[#F0EDF5] pt-4">
+            La familia decide cuándo enseñarlo: el código y el QR están en su informe, y
+            sin ellos no se puede abrir el caso.
+          </p>
+        </div>
       </motion.section>
 
       {/* 8. Call to Action Banner */}
@@ -417,52 +528,6 @@ export const ConoceView: React.FC<ConoceViewProps> = ({ onNavigateToEvaluaciones
           </div>
         </div>
       </motion.section>
-
-      {/* Video Modal Preview */}
-      <AnimatePresence>
-        {showVideoModal && (
-          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 border border-[#E5E1EC] shadow-2xl"
-            >
-              <div className="flex items-center justify-between pb-2 border-b border-[#E5E1EC]">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-[#E9DFF5] flex items-center justify-center">
-                    <Play className="w-4 h-4 fill-[#4A2270] text-[#4A2270]" />
-                  </div>
-                  <h3 className="text-base font-bold text-[#2E2A33]">Cómo funciona PAN</h3>
-                </div>
-                <button
-                  onClick={() => setShowVideoModal(false)}
-                  className="p-1 rounded-lg text-[#6E6A75] hover:bg-[#F7F5FA] cursor-pointer"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <div className="aspect-video bg-[#E9DFF5]/60 rounded-2xl flex flex-col items-center justify-center p-6 text-center border border-[#D5CCE0]">
-                <Info className="w-10 h-10 text-[#4A2270] mb-2" />
-                <p className="text-sm font-bold text-[#2E2A33]">Resumen interactivo de la plataforma</p>
-                <p className="text-xs text-[#6E6A75] mt-1.5 max-w-xs leading-relaxed">
-                  1. Cuestionario de tamizaje para niños de 16 a 30 meses.<br/>
-                  2. Mapeo georreferenciado de postas, hospitales y CSMC.<br/>
-                  3. Informe digital con QR para la consulta CRED o de salud.
-                </p>
-              </div>
-
-              <button
-                onClick={() => setShowVideoModal(false)}
-                className="w-full py-3 bg-[#4A2270] text-white text-xs font-bold rounded-xl hover:bg-[#381559] transition-colors cursor-pointer"
-              >
-                Entendido, cerrar
-              </button>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
 
     </div>
   );
