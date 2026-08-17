@@ -60,6 +60,42 @@
   animation: pin-bounce 0.75s ease-in-out infinite;
 }
 
+/* Recorrido guiado: barra que consume el tiempo del paso actual.
+   Va en CSS y no en JavaScript porque así se congela con una sola propiedad
+   cuando alguien pausa, sin recalcular nada por cuadro. */
+@keyframes demo-paso {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+.animate-demo-paso {
+  transform-origin: left;
+  animation-name: demo-paso;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+/* Latido suave del punto que indica que el recorrido avanza solo. */
+@keyframes demo-latido {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.45; transform: scale(0.82); }
+}
+
+.animate-demo-latido {
+  animation: demo-latido 1.8s ease-in-out infinite;
+}
+
+/* Quien pide menos movimiento no debería sufrir una barra corriendo ni un
+   punto latiendo. El recorrido sigue avanzando: solo deja de animarse. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-demo-paso,
+  .animate-demo-latido,
+  .animate-marker-bounce {
+    animation: none;
+  }
+  .animate-demo-paso { transform: scaleX(1); }
+}
+
 /* Leaflet Custom Marker & Tooltip Overrides */
 .leaflet-popup-content-wrapper {
   padding: 0 !important;

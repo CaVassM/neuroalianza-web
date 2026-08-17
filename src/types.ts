@@ -11,6 +11,8 @@ export type ScreenType =
   | 'evaluaciones'
   | 'cuestionario'
   | 'caso'
+  // La vista del profesional se venía usando sin estar declarada aquí.
+  | 'profesional'
   | 'seguimiento';
 
 export type InsuranceType = 'sis' | 'essalud' | 'eps' | 'none';

@@ -61,6 +61,7 @@ export default function App() {
     irA: setCurrentScreen,
     aplicarPerfil: setUser,
     perfilOriginal: () => perfilReal.current,
+    abrirCasoProfesional: setProfesionalCode,
   });
 
   // El recorrido escribe un caso sintético encima del real. Persistirlo

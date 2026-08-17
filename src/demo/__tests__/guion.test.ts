@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { UserProfile } from '../../types';
 import { calcularPuntaje, clasificar, esAplicable } from '../../dominio/tamizaje';
 import { calcularEdadMeses, parseMesTextoANumero } from '../../utils/age';
+import { getDistrictCoordinates } from '../../utils/distancia';
 import {
+  CODIGO_DEMO,
   DURACION_TOTAL,
   GUION,
   PUNTAJE_DEMO,
@@ -33,14 +35,17 @@ describe('guion del recorrido de demostración', () => {
   });
 
   /**
-   * Dos datos que parecen decorativos y no lo son: fuera de Miraflores el mapa
-   * sale vacío (es el único distrito con establecimientos cargados), y fuera
-   * del rango 16-30 meses el cuestionario muestra la pantalla de "no aplicable"
-   * en lugar del semáforo.
+   * La edad parece decorativa y no lo es: fuera del rango 16-30 meses el
+   * cuestionario muestra la pantalla de "no aplicable" en lugar del semáforo, y
+   * el recorrido se corta justo en su paso central.
+   *
+   * El distrito ya no condiciona el mapa —el padrón cubre los 50 de Lima y
+   * Callao—, pero se comprueba que sea uno reconocido: con uno que no lo fuera,
+   * el mapa abriría con el aviso de "no tenemos establecimientos aquí".
    */
   it('el distrito y la edad permiten enseñar el mapa y el tamizaje', () => {
     const c = cuentaSintetizada();
-    expect(c.location.district).toBe('Miraflores');
+    expect(getDistrictCoordinates(c.location.district)).not.toBeNull();
 
     const meses = calcularEdadMeses(
       parseMesTextoANumero(c.child.birthMonth),
@@ -66,18 +71,41 @@ describe('guion del recorrido de demostración', () => {
     expect(perfil.screeningResult?.nivel).toBe('moderada');
   });
 
-  it('el recorrido cubre las pantallas clave y cierra con una consulta', () => {
+  it('el recorrido cubre las pantallas clave, incluida la del profesional', () => {
     const pantallas = GUION.map((p) => p.pantalla);
-    for (const esperada of ['dashboard', 'mi-ruta', 'evaluaciones', 'cuestionario', 'familias']) {
+    for (const esperada of [
+      'dashboard',
+      'mi-ruta',
+      'evaluaciones',
+      'cuestionario',
+      'familias',
+      'profesional',
+    ]) {
       expect(pantallas, `falta la pantalla ${esperada}`).toContain(esperada);
     }
+  });
 
+  it('lanza una sola consulta al asistente', () => {
+    // Dos seguidas se pisarían: la segunda llegaría mientras la primera aún
+    // se está escribiendo en pantalla.
+    const conPregunta = GUION.filter((p) => p.pregunta);
+    expect(conPregunta).toHaveLength(1);
+    expect(conPregunta[0].pantalla).toBe('familias');
+  });
+
+  it('la vista del profesional abre el caso del propio recorrido', () => {
+    // Sin esto abriría el caso de demostración por defecto, que es otra
+    // familia distinta de la que el recorrido acaba de construir.
+    const paso = GUION.find((p) => p.pantalla === 'profesional');
+    expect(paso?.casoProfesional).toBe(CODIGO_DEMO);
+  });
+
+  it('cierra volviendo a la aplicación, no dentro de una pantalla suelta', () => {
+    // El último paso no avanza solo: es donde alguien se queda leyendo antes
+    // de pulsar Terminar, así que no puede dejarle en la vista del profesional.
     const ultimo = GUION[GUION.length - 1];
-    expect(ultimo.pantalla).toBe('familias');
-    expect(ultimo.pregunta).toBeTruthy();
-
-    // Solo el último paso lanza consulta: dos seguidas se pisarían.
-    expect(GUION.filter((p) => p.pregunta)).toHaveLength(1);
+    expect(ultimo.pantalla).toBe('dashboard');
+    expect(ultimo.perfil).toBeUndefined();
   });
 
   it('cada paso tiene texto y una duración legible', () => {

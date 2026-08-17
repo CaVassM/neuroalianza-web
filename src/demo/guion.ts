@@ -29,7 +29,12 @@ export interface PasoDemo {
   scrollA?: string;
   /** Pregunta que se lanza al asistente al llegar aquí. */
   pregunta?: string;
+  /** Código de caso que debe abrir la vista del profesional en este paso. */
+  casoProfesional?: string;
 }
+
+/** Código del caso sintético. Lo usa también la vista del profesional. */
+export const CODIGO_DEMO = 'NA-DEMO1';
 
 /**
  * Respuestas que dan 5 puntos: probabilidad MODERADA (semáforo ámbar).
@@ -55,10 +60,15 @@ export const RESPUESTAS_DEMO: Record<number, 'si' | 'no'> = (() => {
 export const PUNTAJE_DEMO = calcularPuntaje(RESPUESTAS_DEMO);
 
 /**
- * Cuenta sintetizada. Miraflores no es decorativo: es el único distrito con
- * establecimientos cargados, así que en cualquier otro el mapa saldría vacío.
- * Y la fecha de nacimiento deja al niño en el rango de 16 a 30 meses en que el
- * M-CHAT-R/F es aplicable.
+ * Cuenta sintetizada.
+ *
+ * El distrito ya no condiciona nada —el padrón cubre los 50 de Lima y Callao—,
+ * pero Miraflores se mantiene porque es donde están los casos de demostración y
+ * conviene que el recorrido y la vista del profesional cuenten lo mismo.
+ *
+ * La fecha de nacimiento sí importa: deja al niño dentro de los 16 a 30 meses en
+ * que el M-CHAT-R/F es aplicable. Fuera de ese rango el recorrido se cortaría en
+ * el paso del tamizaje.
  */
 export function cuentaSintetizada(): UserProfile {
   return {
@@ -108,9 +118,9 @@ export const GUION: PasoDemo[] = [
     duracion: 5000,
     perfil: (u) => ({
       ...u,
-      caseCode: 'NA-DEMO1',
+      caseCode: CODIGO_DEMO,
       fase: 2,
-      registros: [registro('Registro de caso completado', 'Caso NA-DEMO1 creado por la familia.', 2)],
+      registros: [registro('Registro de caso completado', `Caso ${CODIGO_DEMO} creado por la familia.`, 2)],
     }),
   },
   {
@@ -220,6 +230,23 @@ export const GUION: PasoDemo[] = [
     detalle: 'Responde solo con el corpus verificado y cita sus fuentes.',
     duracion: 20000,
     pregunta: '¿Qué es el autismo?',
+  },
+  {
+    id: 'bitacora',
+    pantalla: 'profesional',
+    titulo: 'Lo que ve el profesional',
+    detalle:
+      'Con el código del caso, la consulta empieza con el tamizaje hecho y todo lo que la familia fue registrando.',
+    duracion: 11000,
+    casoProfesional: CODIGO_DEMO,
+  },
+  {
+    id: 'cierre',
+    pantalla: 'dashboard',
+    titulo: 'Hasta aquí el recorrido',
+    detalle:
+      'Ya viste la ruta completa. Pulsa Terminar y pruébala tú: al salir, la aplicación vuelve a quedar como estaba.',
+    duracion: 12000,
   },
 ];
 

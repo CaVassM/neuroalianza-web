@@ -7,6 +7,8 @@ interface Opciones {
   aplicarPerfil: (perfil: UserProfile) => void;
   /** Perfil real de la familia, para devolverlo al terminar. */
   perfilOriginal: () => UserProfile;
+  /** Qué caso debe abrir la vista del profesional cuando el guion pasa por ella. */
+  abrirCasoProfesional?: (codigo: string) => void;
 }
 
 /**
@@ -20,7 +22,12 @@ interface Opciones {
  * un caso sintético sobre el estado real, y sin restaurar se llevaría por
  * delante los datos de quien estuviera usando la aplicación.
  */
-export function useRecorridoDemo({ irA, aplicarPerfil, perfilOriginal }: Opciones) {
+export function useRecorridoDemo({
+  irA,
+  aplicarPerfil,
+  perfilOriginal,
+  abrirCasoProfesional,
+}: Opciones) {
   const [activo, setActivo] = useState(false);
   const [enPausa, setEnPausa] = useState(false);
   const [indice, setIndice] = useState(0);
@@ -94,6 +101,9 @@ export function useRecorridoDemo({ irA, aplicarPerfil, perfilOriginal }: Opcione
       perfilDemo.current = paso.perfil(perfilDemo.current);
     }
     aplicarPerfil(perfilDemo.current);
+    // El código va ANTES de navegar: la vista del profesional lo lee al
+    // montarse, y si llega después buscaría el caso equivocado.
+    if (paso.casoProfesional) abrirCasoProfesional?.(paso.casoProfesional);
     irA(paso.pantalla);
     setPregunta(paso.pregunta);
 
