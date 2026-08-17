@@ -25,10 +25,33 @@ export default function App() {
   // El perfil se rehidrata de localStorage al arrancar. Sin esto, el celular
   // que la familia escribe al registrarse se perdía al recargar y el botón de
   // WhatsApp volvía a pedirlo.
-  const [user, setUser] = useState<UserProfile>(() => cargarPerfil() ?? PERFIL_DEMO);
+  const perfilGuardado = useRef<UserProfile | null>(cargarPerfil());
 
-  // Current view state
-  const [currentScreen, setCurrentScreen] = useState<ScreenType>('dashboard');
+  const [user, setUser] = useState<UserProfile>(() => perfilGuardado.current ?? PERFIL_DEMO);
+
+  /**
+   * Quien abre el enlace por primera vez entra por la puerta, no por dentro.
+   *
+   * Antes la aplicación arrancaba directamente en el inicio y con una cuenta ya
+   * puesta: quien llegaba desde el enlace se encontraba saludado por su nombre,
+   * con un niño y una fase que no eran suyos, sin haber hecho nada. Ahora la
+   * primera pantalla es el ingreso, y solo se salta si este navegador ya tiene
+   * una cuenta guardada.
+   */
+  const [currentScreen, setCurrentScreen] = useState<ScreenType>(
+    perfilGuardado.current ? 'dashboard' : 'login'
+  );
+
+  /**
+   * Si la persona ya entró. Mientras sea falso, nada se guarda.
+   *
+   * El perfil de demostración vive en memoria desde el arranque para que las
+   * pantallas tengan con qué pintarse. Sin esta marca, el efecto de persistencia
+   * lo escribía en el navegador nada más cargar, y en la siguiente visita el
+   * ingreso ya no volvía a aparecer: la aplicación se quedaba para siempre
+   * dentro de una cuenta que nadie creó.
+   */
+  const [haEntrado, setHaEntrado] = useState(Boolean(perfilGuardado.current));
   const [profesionalCode, setProfesionalCode] = useState<string>('NA-7K3M9');
 
   // Último perfil REAL, el de antes de entrar al recorrido de demostración.
@@ -46,8 +69,8 @@ export default function App() {
   useEffect(() => {
     if (demo.activo) return;
     perfilReal.current = user;
-    guardarPerfil(user);
-  }, [user, demo.activo]);
+    if (haEntrado) guardarPerfil(user);
+  }, [user, demo.activo, haEntrado]);
   const [seguimientoId, setSeguimientoId] = useState<string>('');
 
   // Detect URL routing for /caso/:codigo, /seguimiento/:id, sus variantes con
@@ -118,10 +141,27 @@ export default function App() {
     };
   }, []);
 
-  // Navigation handlers for onboarding
+  /**
+   * Ingreso de quien ya tiene su cuenta en este navegador.
+   *
+   * No hay servidor de cuentas: lo único que se puede recuperar es el perfil
+   * guardado en este mismo dispositivo. Si no hay ninguno, la pantalla de
+   * ingreso lo dice y ofrece las dos puertas reales, en vez de dejar entrar a
+   * una cuenta que la persona no creó.
+   */
   const handleLogin = (email: string) => {
-    setUser((prev) => ({ ...prev, email }));
+    if (!perfilGuardado.current) return;
+    setUser({ ...perfilGuardado.current, email });
+    setHaEntrado(true);
     setCurrentScreen('dashboard');
+  };
+
+  /** Entrar a mirar con la cuenta de ejemplo, dicho con todas las letras. */
+  const handleEntrarDemo = () => {
+    setUser(PERFIL_DEMO);
+    setHaEntrado(true);
+    setCurrentScreen('dashboard');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleStep1Submit = (childData: ChildData) => {
@@ -163,6 +203,8 @@ export default function App() {
             ],
       };
     });
+    // El registro termina aquí: a partir de ahora sí hay cuenta que guardar.
+    setHaEntrado(true);
     setCurrentScreen('dashboard');
   };
 
@@ -177,12 +219,16 @@ export default function App() {
    */
   const handleResetFlow = () => {
     borrarPerfil();
+    perfilGuardado.current = null;
+    setHaEntrado(false);
     setUser(crearPerfilNuevo('', ''));
     setCurrentScreen('signup');
   };
 
   const handleCerrarSesion = () => {
     borrarPerfil();
+    perfilGuardado.current = null;
+    setHaEntrado(false);
     setUser(PERFIL_DEMO);
     setCurrentScreen('login');
   };
@@ -232,6 +278,8 @@ export default function App() {
         {currentScreen === 'login' && (
           <LoginView
             onLogin={handleLogin}
+            hayCuentaGuardada={Boolean(perfilGuardado.current)}
+            onEntrarDemo={handleEntrarDemo}
             onGoToRegister={() => {
               setCurrentScreen('signup');
               window.scrollTo({ top: 0, behavior: 'smooth' });

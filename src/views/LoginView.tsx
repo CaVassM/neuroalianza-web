@@ -1,13 +1,22 @@
 import React, { useState } from 'react';
 import { Logo } from '../components/Logo';
-import { ClipboardList, MapPin, ShieldCheck, Eye, EyeOff } from 'lucide-react';
+import { ClipboardList, MapPin, ShieldCheck, Eye, EyeOff, FlaskConical } from 'lucide-react';
 
 interface LoginViewProps {
   onLogin: (email: string) => void;
   onGoToRegister: () => void;
+  /** Si este navegador tiene una cuenta guardada que se pueda recuperar. */
+  hayCuentaGuardada?: boolean;
+  /** Entrar a mirar con la cuenta de ejemplo. */
+  onEntrarDemo?: () => void;
 }
 
-export const LoginView: React.FC<LoginViewProps> = ({ onLogin, onGoToRegister }) => {
+export const LoginView: React.FC<LoginViewProps> = ({
+  onLogin,
+  onGoToRegister,
+  hayCuentaGuardada = false,
+  onEntrarDemo,
+}) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -28,8 +37,16 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin, onGoToRegister })
       return;
     }
 
-    // Simple mock login flow always goes to dashboard in this prototype, 
-    // but the user's prompt indicated "Crear una" goes to registration.
+    // PAN no tiene servidor de cuentas: lo único recuperable es el perfil
+    // guardado en este mismo navegador. Sin él no hay a qué entrar, y dejar
+    // pasar a una cuenta que la persona no creó es peor que decírselo.
+    if (!hayCuentaGuardada) {
+      setError(
+        'En este dispositivo todavía no hay ninguna cuenta. Crea la tuya o entra con la cuenta de ejemplo.'
+      );
+      return;
+    }
+
     onLogin(email);
   };
 
@@ -85,8 +102,13 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin, onGoToRegister })
             <ShieldCheck className="w-4 h-4 text-[#E9DFF5]" />
             Qué datos usamos
           </h4>
+          {/* Este aviso decía que no pedíamos el nombre del niño. Sí lo pedimos:
+              la aplicación lo usa en todas las pantallas. Al pasar el ingreso a
+              ser la primera pantalla, la frase quedó a la vista de todos. */}
           <p className="text-[13px] text-white/80 leading-relaxed pr-4">
-            Solo la edad de tu hijo, tu distrito y tu tipo de seguro, para personalizar la orientación que te mostramos. No pedimos el nombre del niño ni ningún dato que permita identificarlo.
+            Tu nombre y el de tu hijo, su fecha de nacimiento, tu distrito y tu seguro:
+            con eso personalizamos la orientación. El celular solo se usa si pides que te
+            enviemos tu ruta por WhatsApp. No pedimos DNI ni documentos de identidad.
           </p>
         </div>
       </div>
@@ -152,7 +174,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin, onGoToRegister })
                 </button>
               </div>
 
-              <div className="pt-4 text-center space-y-3 text-[13px]">
+              <div className="pt-4 text-center text-[13px]">
                 <p className="text-[#6E6A75]">
                   ¿No tienes cuenta?{' '}
                   <button
@@ -163,16 +185,32 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin, onGoToRegister })
                     Crear una
                   </button>
                 </p>
-                <div>
-                  <button
-                    type="button"
-                    className="text-[#6E6A75] hover:text-[#4A2270] hover:underline"
-                  >
-                    ¿Olvidaste tu contraseña?
-                  </button>
-                </div>
               </div>
             </form>
+
+            {/* Entrada a la cuenta de ejemplo.
+                Va aparte y con su nombre, no escondida detrás del formulario:
+                antes se llegaba a ella sin querer, porque la aplicación abría
+                directamente dentro y saludaba a quien llegaba con un nombre,
+                un niño y una fase que no eran suyos. */}
+            {onEntrarDemo && (
+              <div className="mt-7 pt-6 border-t border-[#E5E1EC] space-y-3">
+                <div className="flex items-start gap-2.5">
+                  <FlaskConical className="w-4 h-4 text-[#6B3FA0] shrink-0 mt-0.5" />
+                  <p className="text-[13px] text-[#6E6A75] leading-relaxed">
+                    ¿Solo quieres mirar? Entra con una cuenta de ejemplo, con la ruta ya
+                    empezada. No es una familia real.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={onEntrarDemo}
+                  className="w-full py-3 bg-white hover:bg-[#FAF8FD] border border-[#D5C6EB] text-[#4A2270] text-[14px] font-bold rounded-lg transition-all cursor-pointer"
+                >
+                  Explorar con la cuenta de ejemplo
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
