@@ -1,6 +1,7 @@
 import { CaseData, UserProfile } from '../types';
 import { CASOS_DEMO_MAP, DEMO_CASO_1 } from '../datos/demo';
 import { calcularEdadMeses, parseMesTextoANumero } from '../utils/age';
+import { ESTABLECIMIENTOS } from './establecimientos';
 
 /**
  * Builds or fetches a case based on case code and current user state
@@ -27,8 +28,11 @@ export function getCaseByCode(codigo: string, currentUser?: UserProfile): CaseDa
     // If current user is active on this case, merge user edits
     if (currentUser && currentUser.caseCode === cleanCode) {
       const userFase = currentUser.fase || c.faseActual;
-      const userScore = currentUser.screeningResult?.score ?? t?.puntaje ?? 0;
-      const userNivel = currentUser.screeningResult?.nivel ?? t?.nivel ?? 'baja';
+      // Si ni la familia ni el caso tienen tamizaje, no hay puntaje: rellenar
+      // con 0 y "riesgo bajo" era afirmar que respondieron y salió bien.
+      const puntaje = currentUser.screeningResult ?? t;
+      const userScore = currentUser.screeningResult?.score ?? t?.puntaje;
+      const userNivel = currentUser.screeningResult?.nivel ?? t?.nivel;
       const userAnswers = currentUser.screeningAnswers || t?.respuestas || {};
 
       const mappedRegistros = (currentUser.registros || []).map((r) => ({
@@ -47,14 +51,20 @@ export function getCaseByCode(codigo: string, currentUser?: UserProfile): CaseDa
         district: currentUser.location?.district || c.distrito,
         insurance: (currentUser.insurance?.toLowerCase() as any) || c.seguro.toLowerCase(),
         fase: userFase,
-        instrumento: {
-          nombre: 'M-CHAT-R/F (versión peruana, Anexo 11 NTS N° 238-MINSA/DGIESP-2025)',
-          score: userScore,
-          nivel: userNivel,
-          fecha: t?.fecha || new Date().toLocaleDateString('es-PE'),
-          respondidoPor: 'Respondido por el cuidador',
-          respuestas: userAnswers,
-        },
+        instrumento:
+          puntaje && userScore !== undefined && userNivel !== undefined
+            ? {
+                nombre: 'M-CHAT-R/F · tamizaje exigido por la NTS N° 238-MINSA/DGIESP-2025',
+                score: userScore,
+                nivel: userNivel,
+                fecha:
+                  currentUser.screeningResult?.fecha ||
+                  t?.fecha ||
+                  new Date().toLocaleDateString('es-PE'),
+                respondidoPor: 'Respondido por el cuidador',
+                respuestas: userAnswers,
+              }
+            : null,
         registros: mappedRegistros.length > 0 ? mappedRegistros : demoEntry.eventos.map((e) => ({
           fecha: new Date(e.fecha).toLocaleDateString('es-PE', { day: 'numeric', month: 'short' }),
           titulo: e.descripcion,
@@ -62,6 +72,12 @@ export function getCaseByCode(codigo: string, currentUser?: UserProfile): CaseDa
           tipo: e.tipo === 'tamizaje' ? 'tamizaje' : e.tipo === 'establecimiento' ? 'establecimiento' : 'fase_update',
           origen: e.origen === 'profesional' ? 'profesional' : 'familia',
         })),
+
+        establecimiento: buscarEstablecimiento(currentUser.selectedEstablecimientoCodigo),
+        derivaciones: currentUser.derivaciones || [],
+        barrera: currentUser.barrierReport || null,
+        tratamiento: currentUser.tratamiento || null,
+        seguimientoId: currentUser.seguimientoId,
       };
     }
 
@@ -75,7 +91,7 @@ export function getCaseByCode(codigo: string, currentUser?: UserProfile): CaseDa
       // afirmar que la familia respondió y salió bien.
       instrumento: t
         ? {
-            nombre: 'M-CHAT-R/F (versión peruana, Anexo 11 NTS N° 238-MINSA/DGIESP-2025)',
+            nombre: 'M-CHAT-R/F · tamizaje exigido por la NTS N° 238-MINSA/DGIESP-2025',
             score: t.puntaje,
             nivel: t.nivel,
             fecha: t.fecha,
@@ -110,7 +126,7 @@ export function getCaseByCode(codigo: string, currentUser?: UserProfile): CaseDa
       fase: currentUser.fase || 3,
       instrumento: tamizaje
         ? {
-            nombre: 'M-CHAT-R/F (versión peruana, Anexo 11 NTS N° 238-MINSA/DGIESP-2025)',
+            nombre: 'M-CHAT-R/F · tamizaje exigido por la NTS N° 238-MINSA/DGIESP-2025',
             score: tamizaje.score,
             nivel: tamizaje.nivel,
             fecha:
@@ -133,9 +149,24 @@ export function getCaseByCode(codigo: string, currentUser?: UserProfile): CaseDa
         tipo: r.tipo,
         origen: r.origen,
       })),
+
+      // Lo que la familia reportó y antes se quedaba en su propia pantalla.
+      establecimiento: buscarEstablecimiento(currentUser.selectedEstablecimientoCodigo),
+      derivaciones: currentUser.derivaciones || [],
+      barrera: currentUser.barrierReport || null,
+      tratamiento: currentUser.tratamiento || null,
+      seguimientoId: currentUser.seguimientoId,
     };
   }
 
   // Code not found
   return null;
+}
+
+/** Nombre del establecimiento elegido, para no enseñar solo un código IPRESS. */
+function buscarEstablecimiento(codigo?: string) {
+  if (!codigo) return null;
+  const item = ESTABLECIMIENTOS.find((e) => e.codigo === codigo);
+  if (!item) return null;
+  return { codigo: item.codigo, nombre: item.nombre, distrito: item.distrito };
 }

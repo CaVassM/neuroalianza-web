@@ -95,6 +95,25 @@ export interface CaseData {
     respuestas: Record<number, 'si' | 'no'>;
   } | null;
   registros: CaseLogItem[];
+
+  /**
+   * Lo que la familia fue reportando y que antes moría en su propia pantalla.
+   *
+   * La bitácora ya listaba los eventos, pero sin estructura: una barrera se veía
+   * igual que un cambio de fase, y el motivo por el que una familia dejó el
+   * tratamiento —que es justo lo que un profesional necesita saber— no llegaba
+   * de ninguna forma a esta vista.
+   */
+  establecimiento?: { codigo: string; nombre: string; distrito: string } | null;
+  derivaciones?: ServicioCita[];
+  barrera?: BarrierReport | null;
+  tratamiento?: {
+    tomando: boolean;
+    motivo?: string;
+    actualizadoEn: string;
+  } | null;
+  /** Identificador del seguimiento, para leer lo que respondió por WhatsApp. */
+  seguimientoId?: string;
 }
 
 export interface UserProfile {

@@ -72,3 +72,71 @@ describe('getCaseByCode', () => {
     expect(getCaseByCode('')).toBeNull();
   });
 });
+
+describe('lo que la familia reporta llega a la vista profesional', () => {
+  // Todo esto se quedaba en la pantalla de la familia. El profesional veía el
+  // tamizaje y una lista plana de eventos, y no la razón por la que el caso
+  // estaba detenido ni si el tratamiento se estaba cumpliendo.
+
+  it('traslada la barrera con su motivo', () => {
+    const caso = getCaseByCode(
+      'NA-TEST1',
+      familia({
+        barrierReport: {
+          tipo: 'sin_cupos',
+          fecha: '14 ago',
+          titulo: 'Reportaste una barrera: sin cupos',
+          detalle: 'No había fechas disponibles.',
+        },
+      })
+    )!;
+    expect(caso.barrera?.tipo).toBe('sin_cupos');
+    expect(caso.barrera?.detalle).toBe('No había fechas disponibles.');
+  });
+
+  it('traslada la adherencia al tratamiento y por qué se interrumpió', () => {
+    const caso = getCaseByCode(
+      'NA-TEST1',
+      familia({
+        tratamiento: { tomando: false, motivo: 'No había stock', actualizadoEn: '15 ago' },
+      })
+    )!;
+    expect(caso.tratamiento?.tomando).toBe(false);
+    expect(caso.tratamiento?.motivo).toBe('No había stock');
+  });
+
+  it('resuelve el establecimiento elegido a su nombre real', () => {
+    const caso = getCaseByCode(
+      'NA-TEST1',
+      familia({ selectedEstablecimientoCodigo: '00006200' })
+    )!;
+    expect(caso.establecimiento?.nombre).toContain('Santa Cruz');
+    expect(caso.establecimiento?.distrito).toBe('Miraflores');
+  });
+
+  it('no inventa un establecimiento si el código no existe', () => {
+    const caso = getCaseByCode(
+      'NA-TEST1',
+      familia({ selectedEstablecimientoCodigo: '99999999' })
+    )!;
+    expect(caso.establecimiento).toBeNull();
+  });
+
+  it('traslada las derivaciones y el identificador de seguimiento', () => {
+    const caso = getCaseByCode(
+      'NA-TEST1',
+      familia({ derivaciones: ['pediatria', 'neuropediatria'], seguimientoId: 'abc123' })
+    )!;
+    expect(caso.derivaciones).toEqual(['pediatria', 'neuropediatria']);
+    expect(caso.seguimientoId).toBe('abc123');
+  });
+
+  it('no cita un anexo que no se pudo verificar', () => {
+    const caso = getCaseByCode(
+      'NA-TEST1',
+      familia({ screeningResult: { score: 3, nivel: 'baja' } })
+    )!;
+    expect(caso.instrumento?.nombre).not.toContain('Anexo');
+    expect(caso.instrumento?.nombre).toContain('NTS N° 238-MINSA/DGIESP-2025');
+  });
+});

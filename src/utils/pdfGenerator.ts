@@ -40,7 +40,7 @@ export async function generateAndDownloadScreeningPDF(options: ScreeningPDFOptio
     nivel === 'baja'
       ? 'Continuar con los controles CRED habituales en el centro de salud. Si el menor tiene menos de 2 años, repetir tamizaje a los 24 meses.'
       : nivel === 'moderada'
-      ? 'Acudir a control CRED en el centro de salud de su sector para aplicar la entrevista de seguimiento del M-CHAT-R/F (Anexo 11 NTS N° 238-MINSA/DGIESP-2025).'
+      ? 'Acudir a control CRED en el centro de salud de su sector para aplicar la entrevista de seguimiento del M-CHAT-R/F, conforme a la NTS N° 238-MINSA/DGIESP-2025.'
       : 'Acudir a evaluación médica prioritaria en el centro de salud o CSMC de su jurisdicción para derivación especializada a neuropediatría o psiquiatría infantil.';
 
   // Build target URL for QR
@@ -158,7 +158,7 @@ export async function generateAndDownloadScreeningPDF(options: ScreeningPDFOptio
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9.5);
   doc.setTextColor(46, 42, 51);
-  doc.text('M-CHAT-R/F (versión peruana, Anexo 11 NTS N° 238-MINSA/DGIESP-2025)', margin + 23, screeningY + 6.5);
+  doc.text('M-CHAT-R/F - tamizaje exigido por la NTS N° 238-MINSA/DGIESP-2025', margin + 23, screeningY + 6.5);
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8.5);
@@ -267,7 +267,7 @@ export async function generateAndDownloadScreeningPDF(options: ScreeningPDFOptio
   doc.setFontSize(7);
   doc.setTextColor(46, 42, 51);
   const cartaTexto =
-    'Estimado profesional de salud: el cuidador de este menor aplicó el M-CHAT-R/F, herramienta de tamizaje incluida en el Anexo 11 de la NTS N° 238-MINSA/DGIESP-2025. El resultado se adjunta arriba. Como toda herramienta de tamizaje, requiere la entrevista de seguimiento para mejorar su especificidad. Este documento no constituye un diagnóstico. Puede consultar el estado del caso escaneando el código QR.';
+    'Estimado profesional de salud: el cuidador de este menor aplicó el M-CHAT-R/F, herramienta de tamizaje exigida por la NTS N° 238-MINSA/DGIESP-2025. El resultado se adjunta arriba. Como toda herramienta de tamizaje, requiere la entrevista de seguimiento para mejorar su especificidad. Este documento no constituye un diagnóstico. Puede consultar el estado del caso escaneando el código QR.';
   const splitCarta = doc.splitTextToSize(cartaTexto, contentWidth - 8);
   doc.text(splitCarta, margin + 4, letterY + 10);
 

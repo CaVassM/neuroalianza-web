@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import QRCode from 'qrcode';
 import { CaseData, CasePhase, UserProfile } from '../types';
 import { getCaseByCode } from '../data/casosDemo';
+import { verSeguimiento, type RespuestaSeguimiento } from '../api/cliente';
 import { Logo } from '../components/Logo';
 import { RastreadorCompacto } from '../components/PhaseTracker/RastreadorCompacto';
 import { generateAndDownloadScreeningPDF } from '../utils/pdfGenerator';
@@ -19,8 +20,81 @@ import {
   ChevronDown,
   ChevronUp,
   Search,
-  AlertCircle
+  AlertCircle,
+  AlertTriangle,
+  ClipboardCheck,
+  MessageCircle
 } from 'lucide-react';
+
+/** Nombres legibles de lo que la ruta registra en clave interna. */
+const NOMBRE_SERVICIO: Record<string, string> = {
+  cred: 'Control CRED',
+  pediatria: 'Pediatría',
+  neuropediatria: 'Neuropediatría',
+  psiquiatria: 'Psiquiatría infantil',
+  especialista: 'Otra especialidad',
+};
+
+const MOTIVO_BARRERA: Record<string, string> = {
+  sin_cupos: 'No había cupos ni citas disponibles',
+  muy_lejos: 'El establecimiento le queda demasiado lejos',
+  costo: 'El costo le impidió continuar',
+  no_atendieron: 'Acudió y no la atendieron',
+};
+
+/** Las mismas tres opciones que vio la familia al responder, con su texto. */
+const ESTADO_RESPUESTA: Record<string, { texto: string; clases: string }> = {
+  bien: { texto: 'Bien · pude avanzar', clases: 'bg-[#C3E5D4] text-[#1F5B41]' },
+  regular: { texto: 'Más o menos · avancé a medias', clases: 'bg-[#F6DCB6] text-[#8A5300]' },
+  mal: { texto: 'No pude · se complicó', clases: 'bg-[#D5C6EB] text-[#4A2270]' },
+};
+
+/**
+ * Cómo se pinta cada tipo de evento en la bitácora.
+ *
+ * Lo que detiene un caso —una barrera— tiene que saltar a la vista sin leer.
+ */
+const ESTILO_EVENTO: Record<
+  string,
+  { nombre: string; punto: string; caja: string; etiqueta: string }
+> = {
+  barrera: {
+    nombre: 'Barrera',
+    punto: 'bg-[#C77700]',
+    caja: 'bg-[#FDF1DF] border-[#F6DCB6]',
+    etiqueta: 'bg-[#F6DCB6] text-[#8A5300]',
+  },
+  tamizaje: {
+    nombre: 'Tamizaje',
+    punto: 'bg-[#2E7D5B]',
+    caja: 'bg-[#E6F2EC] border-[#C3E5D4]',
+    etiqueta: 'bg-[#C3E5D4] text-[#1F5B41]',
+  },
+  cita: {
+    nombre: 'Cita',
+    punto: 'bg-[#4A2270]',
+    caja: 'bg-[#FAF8FD] border-[#D5C6EB]',
+    etiqueta: 'bg-[#E9DFF5] text-[#4A2270]',
+  },
+  diagnostico: {
+    nombre: 'Diagnóstico',
+    punto: 'bg-[#2E1A47]',
+    caja: 'bg-[#F4EFFB] border-[#D5C6EB]',
+    etiqueta: 'bg-[#D5C6EB] text-[#2E1A47]',
+  },
+  establecimiento: {
+    nombre: 'Establecimiento',
+    punto: 'bg-[#6B3FA0]',
+    caja: 'bg-[#FAF8FD] border-[#E5E1EC]',
+    etiqueta: 'bg-[#E9DFF5] text-[#4A2270]',
+  },
+  fase_update: {
+    nombre: 'Avance',
+    punto: 'bg-[#8E8A95]',
+    caja: 'bg-[#FAF8FD] border-[#E5E1EC]',
+    etiqueta: 'bg-[#EFEDF3] text-[#6E6A75]',
+  },
+};
 
 interface ProfesionalViewProps {
   code?: string;
@@ -41,6 +115,16 @@ export const ProfesionalView: React.FC<ProfesionalViewProps> = ({
   const [showFullTable, setShowFullTable] = useState(true);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
+
+  /**
+   * Lo que la familia contestó por WhatsApp.
+   *
+   * Vive en el servidor, no en el navegador, así que hay que ir a buscarlo. Sin
+   * esto, un profesional veía la ruta pero no lo que la familia respondió
+   * cuando se le preguntó cómo le había ido, que es la mitad de la historia.
+   */
+  const [respuestasWhatsApp, setRespuestasWhatsApp] = useState<RespuestaSeguimiento[]>([]);
+  const [errorSeguimiento, setErrorSeguimiento] = useState('');
 
   // Professional action form state
   const [selectedAtencionType, setSelectedAtencionType] = useState<'tamizaje' | 'referencia' | 'diagnostico'>('referencia');
@@ -70,6 +154,32 @@ export const ProfesionalView: React.FC<ProfesionalViewProps> = ({
       .then(setQrDataUrl)
       .catch((err) => console.error('Error generating QR:', err));
   }, [currentCode, caseData]);
+
+  const seguimientoId = caseData?.seguimientoId;
+
+  useEffect(() => {
+    if (!seguimientoId) {
+      setRespuestasWhatsApp([]);
+      setErrorSeguimiento('');
+      return;
+    }
+
+    let vigente = true;
+    verSeguimiento(seguimientoId)
+      .then((s) => {
+        if (vigente) setRespuestasWhatsApp(s.respuestas || []);
+      })
+      .catch(() => {
+        // No es un fallo del caso: puede que el servidor esté apagado. Se dice,
+        // en vez de mostrar una lista vacía como si la familia no hubiera
+        // contestado nada.
+        if (vigente) setErrorSeguimiento('No se pudo consultar el servidor de seguimiento.');
+      });
+
+    return () => {
+      vigente = false;
+    };
+  }, [seguimientoId]);
 
   const handleSearchCodeSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -492,7 +602,7 @@ export const ProfesionalView: React.FC<ProfesionalViewProps> = ({
                 <div>
                   {score >= 3 && score <= 7 ? (
                     <p>
-                      <strong>Siguiente paso normativo:</strong> Puntaje entre 3 y 7 puntos. Según la NTS N° 238-MINSA/DGIESP-2025, corresponde realizar la <strong>Entrevista de Seguimiento del M-CHAT-R/F</strong> (Anexo 11) en el establecimiento de salud para confirmar o descartar necesidad de referencia.
+                      <strong>Siguiente paso normativo:</strong> Puntaje entre 3 y 7 puntos. Según la NTS N° 238-MINSA/DGIESP-2025, corresponde realizar la <strong>Entrevista de Seguimiento del M-CHAT-R/F</strong> en el establecimiento de salud para confirmar o descartar necesidad de referencia.
                     </p>
                   ) : score >= 8 ? (
                     <p>
@@ -568,6 +678,168 @@ export const ProfesionalView: React.FC<ProfesionalViewProps> = ({
               </div>
             </section>
 
+            {/* Section 1.5: LO QUE LA FAMILIA REPORTÓ.
+                Antes esta vista solo mostraba el tamizaje y una lista plana de
+                eventos. Todo lo que la familia iba registrando después —dónde
+                eligió atenderse, qué la frenó, si está siguiendo el
+                tratamiento— se quedaba en su pantalla y no llegaba aquí, que es
+                justo donde sirve para decidir. */}
+            {(caseData.establecimiento ||
+              caseData.barrera ||
+              caseData.tratamiento ||
+              (caseData.derivaciones && caseData.derivaciones.length > 0) ||
+              seguimientoId) && (
+              <section className="bg-white rounded-2xl border border-[#E5E1EC] p-6 sm:p-7 shadow-xs space-y-4">
+                <div className="space-y-1 border-b border-[#F0EDF5] pb-3">
+                  <h3 className="text-lg font-fraunces font-bold text-[#2E2A33] flex items-center gap-2">
+                    <ClipboardCheck className="w-4 h-4 text-[#4A2270]" />
+                    <span>Lo que la familia reportó</span>
+                  </h3>
+                  <p className="text-xs text-[#6E6A75]">
+                    Información que el cuidador registró por su cuenta, fuera de la consulta
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {caseData.establecimiento && (
+                    <div className="p-4 rounded-xl bg-[#FAF8FD] border border-[#E5E1EC] space-y-1">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-[#6E6A75]">
+                        Dónde se atiende
+                      </span>
+                      <p className="text-[13.5px] font-bold text-[#2E2A33] leading-snug">
+                        {caseData.establecimiento.nombre}
+                      </p>
+                      <p className="text-[11.5px] text-[#6E6A75]">
+                        {caseData.establecimiento.distrito} · IPRESS{' '}
+                        {caseData.establecimiento.codigo}
+                      </p>
+                    </div>
+                  )}
+
+                  {caseData.derivaciones && caseData.derivaciones.length > 0 && (
+                    <div className="p-4 rounded-xl bg-[#FAF8FD] border border-[#E5E1EC] space-y-1.5">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-[#6E6A75]">
+                        Derivaciones recibidas
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {caseData.derivaciones.map((d) => (
+                          <span
+                            key={d}
+                            className="px-2 py-0.5 rounded-md bg-[#E9DFF5] text-[11.5px] font-bold text-[#4A2270]"
+                          >
+                            {NOMBRE_SERVICIO[d] ?? d}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Barrera. Va destacada porque no es un dato más: es la razón
+                    por la que un caso se queda parado. */}
+                {caseData.barrera && (
+                  <div className="p-4 rounded-xl bg-[#FDF1DF] border border-[#F6DCB6] space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4 text-[#C77700] shrink-0" />
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-[#C77700]">
+                        Barrera reportada · {caseData.barrera.fecha}
+                      </span>
+                    </div>
+                    <p className="text-[13.5px] font-bold text-[#2E2A33]">
+                      {MOTIVO_BARRERA[caseData.barrera.tipo] ?? caseData.barrera.titulo}
+                    </p>
+                    {caseData.barrera.detalle && (
+                      <p className="text-[12.5px] text-[#6E6A75] leading-relaxed">
+                        {caseData.barrera.detalle}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Adherencia al tratamiento. PAN no receta: solo registra si lo
+                    indicado se está cumpliendo y qué lo impide. */}
+                {caseData.tratamiento && (
+                  <div
+                    className={`p-4 rounded-xl border space-y-1.5 ${
+                      caseData.tratamiento.tomando
+                        ? 'bg-[#E6F2EC] border-[#C3E5D4]'
+                        : 'bg-[#FDF1DF] border-[#F6DCB6]'
+                    }`}
+                  >
+                    <span
+                      className={`text-[11px] font-bold uppercase tracking-wider ${
+                        caseData.tratamiento.tomando ? 'text-[#2E7D5B]' : 'text-[#C77700]'
+                      }`}
+                    >
+                      Adherencia al tratamiento
+                    </span>
+                    <p className="text-[13.5px] font-bold text-[#2E2A33]">
+                      {caseData.tratamiento.tomando
+                        ? 'La familia reporta que sí lo está siguiendo'
+                        : 'La familia reporta que NO lo está siguiendo'}
+                    </p>
+                    {!caseData.tratamiento.tomando && caseData.tratamiento.motivo && (
+                      <p className="text-[12.5px] text-[#6E6A75] leading-relaxed">
+                        Motivo: {caseData.tratamiento.motivo}
+                      </p>
+                    )}
+                    <p className="text-[11px] text-[#8E8A95]">
+                      Actualizado el {caseData.tratamiento.actualizadoEn}
+                    </p>
+                  </div>
+                )}
+
+                {/* Respuestas al aviso por WhatsApp. */}
+                {seguimientoId && (
+                  <div className="pt-3 border-t border-[#F0EDF5] space-y-2">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#6E6A75] flex items-center gap-1.5">
+                      <MessageCircle className="w-3.5 h-3.5 text-[#4A2270]" />
+                      Respuestas al seguimiento por WhatsApp
+                    </span>
+
+                    {errorSeguimiento ? (
+                      <p className="text-[12.5px] text-[#C77700]">{errorSeguimiento}</p>
+                    ) : respuestasWhatsApp.length === 0 ? (
+                      <p className="text-[12.5px] text-[#6E6A75]">
+                        La familia todavía no ha respondido al aviso.
+                      </p>
+                    ) : (
+                      <ul className="space-y-2">
+                        {respuestasWhatsApp.map((r, i) => (
+                          <li
+                            key={i}
+                            className="p-3 rounded-xl bg-[#FAF8FD] border border-[#E5E1EC] text-[12.5px]"
+                          >
+                            <div className="flex items-center justify-between gap-2 flex-wrap">
+                              <span
+                                className={`px-2 py-0.5 rounded-md text-[11.5px] font-bold ${
+                                  ESTADO_RESPUESTA[r.estado]?.clases ?? 'bg-[#EFEDF3] text-[#6E6A75]'
+                                }`}
+                              >
+                                {ESTADO_RESPUESTA[r.estado]?.texto ?? r.estado}
+                              </span>
+                              <span className="text-[11px] text-[#8E8A95]">
+                                {new Date(r.creado_en).toLocaleDateString('es-PE', {
+                                  day: 'numeric',
+                                  month: 'short',
+                                })}
+                                {r.fase ? ` · fase ${r.fase}` : ''}
+                              </span>
+                            </div>
+                            {r.comentario && (
+                              <p className="text-[#6E6A75] leading-relaxed mt-1">
+                                “{r.comentario}”
+                              </p>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
+              </section>
+            )}
+
             {/* Section 2: Bitácora de Registros y Eventos */}
             <section className="bg-white rounded-2xl border border-[#E5E1EC] p-6 sm:p-7 shadow-xs space-y-4">
               <div className="space-y-1 border-b border-[#F0EDF5] pb-3">
@@ -580,22 +852,53 @@ export const ProfesionalView: React.FC<ProfesionalViewProps> = ({
                 </p>
               </div>
 
+              {/* Los eventos se distinguen por tipo. Antes todos llevaban el
+                  mismo punto morado: una barrera —que es lo que detiene un
+                  caso— se leía igual que un cambio de fase, y había que leer
+                  el texto entero para saber cuál era cuál. */}
               <div className="space-y-3 pt-1">
-                {registros.map((reg, idx) => (
-                  <div
-                    key={idx}
-                    className="bg-[#FAF8FD] p-4 rounded-xl border border-[#E5E1EC] text-xs space-y-1.5 relative overflow-hidden"
-                  >
-                    <div className="flex items-center justify-between flex-wrap gap-2">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-[#4A2270]" />
-                        <span className="font-bold text-[#2E2A33] text-[13px]">{reg.titulo}</span>
+                {registros.length === 0 ? (
+                  <p className="text-xs text-[#6E6A75]">
+                    Todavía no hay eventos registrados en este caso.
+                  </p>
+                ) : (
+                  registros.map((reg, idx) => {
+                    const estilo = ESTILO_EVENTO[reg.tipo] ?? ESTILO_EVENTO.fase_update;
+                    return (
+                      <div
+                        key={idx}
+                        className={`p-4 rounded-xl border text-xs space-y-1.5 ${estilo.caja}`}
+                      >
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className={`w-2 h-2 rounded-full shrink-0 ${estilo.punto}`} />
+                            <span className="font-bold text-[#2E2A33] text-[13px]">
+                              {reg.titulo}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span
+                              className={`px-2 py-0.5 rounded-md text-[10.5px] font-bold uppercase tracking-wide ${estilo.etiqueta}`}
+                            >
+                              {estilo.nombre}
+                            </span>
+                            <span className="text-[11px] text-[#8E8A95] font-medium">
+                              {reg.fecha}
+                            </span>
+                          </div>
+                        </div>
+                        {reg.detalle && (
+                          <p className="text-[#6E6A75] leading-relaxed pl-4">{reg.detalle}</p>
+                        )}
+                        {reg.origen && (
+                          <p className="text-[11px] text-[#8E8A95] pl-4">
+                            Registrado por {reg.origen === 'profesional' ? 'un profesional' : 'la familia'}
+                          </p>
+                        )}
                       </div>
-                      <span className="text-[11px] text-[#8E8A95] font-medium">{reg.fecha}</span>
-                    </div>
-                    <p className="text-[#6E6A75] leading-relaxed pl-4">{reg.detalle}</p>
-                  </div>
-                ))}
+                    );
+                  })
+                )}
               </div>
             </section>
           </div>

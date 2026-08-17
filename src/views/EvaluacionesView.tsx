@@ -139,7 +139,7 @@ export const EvaluacionesView: React.FC<EvaluacionesViewProps> = ({
           </div>
 
           <p className="text-[14px] text-[#6E6A75] mb-8 leading-relaxed">
-            Versión peruana incluida en el Anexo 11 de la Norma Técnica de Salud NTS N° 238-MINSA/DGIESP-2025.
+            Tamizaje exigido por la Norma Técnica de Salud NTS N° 238-MINSA/DGIESP-2025.
           </p>
 
           {!mchatApplicable ? (
