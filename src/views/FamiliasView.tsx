@@ -96,11 +96,25 @@ export const FamiliasView: React.FC<FamiliasViewProps> = ({
   // sustentaba lo que respondía el asistente.
   const [docsCorpus, setDocsCorpus] = useState<CorpusDocument[] | null>(null);
 
+  /**
+   * Si el asistente está disponible ahora mismo.
+   *
+   * El modelo no corre en el sitio publicado: vive en la máquina del equipo y
+   * sale a internet por un túnel. Cuando esa máquina está apagada, el chat
+   * responde desde la biblioteca local y lo dice, pero solo DESPUÉS de que
+   * alguien haya escrito su pregunta y esperado. Avisar antes ahorra ese viaje.
+   *
+   * Se deduce de la consulta de documentos que ya se hacía al abrir: si el
+   * inventario del corpus llega, el servicio está en pie.
+   */
+  const [asistenteEnLinea, setAsistenteEnLinea] = useState<boolean | null>(null);
+
   useEffect(() => {
     let vigente = true;
     listarDocumentos()
       .then(({ documentos }) => {
         if (!vigente) return;
+        setAsistenteEnLinea(true);
         setDocsCorpus(
           documentos.map((d) => ({
             id: d.doc_id,
@@ -120,7 +134,9 @@ export const FamiliasView: React.FC<FamiliasViewProps> = ({
       })
       .catch(() => {
         // Sin backend nos quedamos con la biblioteca local de respaldo.
-        if (vigente) setDocsCorpus(null);
+        if (!vigente) return;
+        setDocsCorpus(null);
+        setAsistenteEnLinea(false);
       });
     return () => {
       vigente = false;
@@ -663,6 +679,25 @@ export const FamiliasView: React.FC<FamiliasViewProps> = ({
               </div>
             )}
           </div>
+
+          {/* El asistente no está en pie: se dice ANTES de escribir.
+              El modelo no vive en el sitio publicado, sino en la máquina del
+              equipo. Cuando está apagada, el chat responde igual desde la
+              biblioteca guardada, pero conviene saberlo antes de escribir una
+              pregunta y esperar a que llegue una respuesta más pobre. */}
+          {asistenteEnLinea === false && (
+            <div className="mx-4 sm:mx-5 mb-1 mt-3 px-4 py-3 rounded-xl bg-[#FDF1DF] border border-[#FBE0B8] flex items-start gap-2.5">
+              <Info className="w-4 h-4 text-[#9E5D00] shrink-0 mt-0.5" />
+              <p className="text-[12.5px] text-[#9E5D00] leading-relaxed">
+                <strong className="font-semibold">
+                  El asistente no está disponible en este momento.
+                </strong>{' '}
+                Funciona mientras el equipo lo tiene encendido. Puedes preguntar igual:
+                responderemos con la información guardada en la aplicación, y cada respuesta
+                te dirá que viene de ahí. La biblioteca de documentos sigue completa.
+              </p>
+            </div>
+          )}
 
           {/* Composer pinned to the bottom of the card */}
           <div className="p-4 sm:p-5 border-t border-[#F0EDF5] bg-[#FAF8FD]/50">
